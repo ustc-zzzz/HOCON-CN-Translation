@@ -2,10 +2,10 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [HOCON (Human-Optimized Config Object Notation)](#hocon-human-optimized-config-object-notation)
-  - [Goals / Background](#goals--background)
-  - [Definitions](#definitions)
-  - [Syntax](#syntax)
+- [HOCON（人性化配置对象表示法，Human-Optimized Config Object Notation）](#hocon%E4%BA%BA%E6%80%A7%E5%8C%96%E9%85%8D%E7%BD%AE%E5%AF%B9%E8%B1%A1%E8%A1%A8%E7%A4%BA%E6%B3%95human-optimized-config-object-notation)
+  - [目标/背景](#%E7%9B%AE%E6%A0%87%E8%83%8C%E6%99%AF)
+  - [定义](#%E5%AE%9A%E4%B9%89)
+  - [语法](#%E8%AF%AD%E6%B3%95)
     - [Unchanged from JSON](#unchanged-from-json)
     - [Comments](#comments)
     - [Omit root braces](#omit-root-braces)
@@ -34,11 +34,12 @@
       - [Include semantics: file formats and extensions](#include-semantics-file-formats-and-extensions)
       - [Include semantics: locating resources](#include-semantics-locating-resources)
     - [Conversion of numerically-indexed objects to arrays](#conversion-of-numerically-indexed-objects-to-arrays)
-  - [MIME Type](#mime-type)
-  - [API Recommendations](#api-recommendations)
+  - [MIME类型](#mime%E7%B1%BB%E5%9E%8B)
+  - [对于API的建议](#%E5%AF%B9%E4%BA%8Eapi%E7%9A%84%E5%BB%BA%E8%AE%AE)
     - [Automatic type conversions](#automatic-type-conversions)
     - [Units format](#units-format)
     - [Duration format](#duration-format)
+    - [Period Format](#period-format)
     - [Size in bytes format](#size-in-bytes-format)
     - [Config object merging and file merging](#config-object-merging-and-file-merging)
     - [Java properties mapping](#java-properties-mapping)
@@ -51,65 +52,42 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# HOCON (Human-Optimized Config Object Notation)
+# HOCON（人性化配置对象表示法，Human-Optimized Config Object Notation）
 
-This is an informal spec, but hopefully it's clear.
+这并非正式文档，不过我觉得我讲得比较清楚了。
 
-## Goals / Background
+## 目标/背景
 
-The primary goal is: keep the semantics (tree structure; set of
-types; encoding/escaping) from JSON, but make it more convenient
-as a human-editable config file format.
+HOCON的主要目标是：保证JSON的语义（如树形结构；类型集合；编码/转义等）的同时，作为一个供人类编辑的配置文件，使其编辑起来更方便。
 
-The following features are desirable, to support human usage:
+我们为方便编辑添加了以下新特性：
 
- - less noisy / less pedantic syntax
- - ability to refer to another part of the configuration (set a value to
-   another value)
- - import/include another configuration file into the current file
- - a mapping to a flat properties list such as Java's system properties
- - ability to get values from environment variables
- - ability to write comments
+ - 减少格式符等不必要的噪音
+ - 允许配置文件中的一处引用另一处（设置一个值为另一个值）
+ - 允许在当前配置文件中导入或包含其他配置文件
+ - 提供到Java等处使用的扁平化properties列表格式的映射
+ - 允许从环境变量中取值
+ - 允许写注释
 
-Implementation-wise, the format should have these properties:
+实现上，这一格式需要满足以下特征：
 
- - a JSON superset, that is, all valid JSON should be valid and
-   should result in the same in-memory data that a JSON parser
-   would have produced.
- - be deterministic; the format is flexible, but it is not
-   heuristic. It should be clear what's invalid and invalid files
-   should generate errors.
- - require minimal look-ahead; should be able to tokenize the file
-   by looking at only the next three characters. (right now, the
-   only reason to look at three is to find "//" comments;
-   otherwise you can parse looking at two.)
+ - JSON格式的超集，也就是说所有有效的JSON格式都应该是合法的，同时在内存中的解析结果应与JSON解析器的输出一致。
+ - 结果唯一；换言之，即使HOCON格式本身非常灵活，但它也不应模棱两可。HOCON应该划定哪些形式是不合法的，不合法的形式在解析时应该报错。
+ - 解析时探测的字符应该尽可能少；换言之，对HOCON格式配置的Tokenize操作不应依赖超过三个字符的探测。（目前探测三个字符的唯一原因只是探测“//”开头的注释；不然的话只需探测两个字符就够了。）
 
-HOCON is significantly harder to specify and to parse than
-JSON. Think of it as moving the work from the person maintaining
-the config file to the computer program.
+HOCON比JSON难描述也难解析得多。想象一下一些维护配置文件的工作，本来是人类负责，结果被转移到机器负责，会发生什么。
 
-## Definitions
+## 定义
 
- - a _key_ is a string JSON would have to the left of `:` and a _value_ is
-   anything JSON would have to the right of `:`. i.e. the two
-   halves of an object _field_.
+ - 我们使用 _键（key）_ 代指JSON中`:`左侧的字符串部分，而 _值（value）_ 代指JSON中`:`右侧的部分。比如：对象的一个 _键值对（field）_ 的两部分。
+ - 我们使用 _值（value）_ 代指JSON规范中被定义为“value”的东西，以及本规范中定义的未加引号的字符串和引用等。
+ - 我们使用 _简单值（simple value）_ 代指对象和数组以外的所有值。
+ - 我们使用 _键值对（field）_ 代指一个键、一个诸如“:”等形式的分隔符、和一个值的排列。
+ - 当我们使用 _文件（file）_ （正在被解析的文件）这一代称时，可能正在被解析的是一串字节流，不一定总是文件系统中的字面意思上的文件。
 
- - a _value_ is any "value" as defined in the JSON spec, plus
-   unquoted strings and substitutions as defined in this spec.
+## 语法
 
- - a _simple value_ is any value excluding an object or array
-   value.
-
- - a _field_ is a key, any separator such as ':', and a value.
-
- - references to a _file_ ("the file being parsed") can be
-   understood to mean any byte stream being parsed, not just
-   literal files in a filesystem.
-
-## Syntax
-
-Much of this is defined with reference to JSON; you can find the
-JSON spec at https://json.org/ of course.
+这部分的大量内容都一定程度上借用了JSON的相关概念；当然你可以在<https://json.org/json-zh.html>找到JSON的语法规范。
 
 ### Unchanged from JSON
 
@@ -1203,14 +1181,13 @@ The details:
    "2" then the resulting array would have indices "0" and "1",
    i.e. missing indices in the object are eliminated.
 
-## MIME Type
+## MIME类型
 
-Use "application/hocon" for Content-Type.
+在诸如Content-Type这样的场合使用“application/hocon”。
 
-## API Recommendations
+## 对于API的建议
 
-Implementations of HOCON ideally follow certain conventions and
-work in a predictable way.
+完美的HOCON格式实现应遵守下面这些约定，并以可预测的方式正常工作。
 
 ### Automatic type conversions
 
@@ -1296,9 +1273,9 @@ must be lowercase. Exactly these strings are supported:
  - `m`, `minute`, `minutes`
  - `h`, `hour`, `hours`
  - `d`, `day`, `days`
- 
+
 ### Period Format
- 
+
 Similar to the `getDuration()` method, there is a `getPeriod()` method 
 available for getting time units as a `java.time.Period`. 
 
@@ -1316,7 +1293,7 @@ must be lowercase. Exactly these strings are supported:
  you will want to use `mo` rather than `m` to prevent your unit being 
  parsed as minutes)
  - `y`, `year`, `years`
- 
+
 ### Size in bytes format
 
 Implementations may wish to support a `getBytes()` returning a
