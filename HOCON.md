@@ -6,11 +6,11 @@
   - [目标/背景](#%E7%9B%AE%E6%A0%87%E8%83%8C%E6%99%AF)
   - [定义](#%E5%AE%9A%E4%B9%89)
   - [语法](#%E8%AF%AD%E6%B3%95)
-    - [Unchanged from JSON](#unchanged-from-json)
-    - [Comments](#comments)
-    - [Omit root braces](#omit-root-braces)
-    - [Key-value separator](#key-value-separator)
-    - [Commas](#commas)
+    - [和JSON一样的地方](#%E5%92%8Cjson%E4%B8%80%E6%A0%B7%E7%9A%84%E5%9C%B0%E6%96%B9)
+    - [注释](#%E6%B3%A8%E9%87%8A)
+    - [对根结构更宽松的要求](#%E5%AF%B9%E6%A0%B9%E7%BB%93%E6%9E%84%E6%9B%B4%E5%AE%BD%E6%9D%BE%E7%9A%84%E8%A6%81%E6%B1%82)
+    - [键值分隔符](#%E9%94%AE%E5%80%BC%E5%88%86%E9%9A%94%E7%AC%A6)
+    - [逗号](#%E9%80%97%E5%8F%B7)
     - [Whitespace](#whitespace)
     - [Duplicate keys and object merging](#duplicate-keys-and-object-merging)
     - [Unquoted strings](#unquoted-strings)
@@ -89,55 +89,43 @@ HOCON比JSON难描述也难解析得多。想象一下一些维护配置文件�
 
 这部分的大量内容都一定程度上借用了JSON的相关概念；当然你可以在<https://json.org/json-zh.html>找到JSON的语法规范。
 
-### Unchanged from JSON
+### 和JSON一样的地方
 
- - files must be valid UTF-8
- - quoted strings are in the same format as JSON strings
- - values have possible types: string, number, object, array, boolean, null
- - allowed number formats matches JSON; as in JSON, some possible
-   floating-point values are not represented, such as `NaN`
+ - 文件必须是合法的UTF-8格式
+ - 加引号的字符串格式和JSON中的字符串相同
+ - 值类型可以是：字符串、数值、对象、数组、布尔值、以及空（null）
+ - 允许的数字格式和JSON相同；在JSON中一些可能的浮点数值，如`NaN`等，是不允许出现的
 
-### Comments
+### 注释
 
-Anything between `//` or `#` and the next newline is considered a comment
-and ignored, unless the `//` or `#` is inside a quoted string.
+所有以`//`或`#`开头，并以一个新的换行符结尾的部分将被视作注释处理，除非`//`或`#`出现在了加引号的字符串中。
 
-### Omit root braces
+### 对根结构更宽松的要求
 
-JSON documents must have an array or object at the root. Empty
-files are invalid documents, as are files containing only a
-non-array non-object value such as a string.
+JSON格式要求根结构必须为数组或者对象。空文件不合法，只含有字符串等既不是数组也不是对象的元素的文件，也不合法。
 
-In HOCON, if the file does not begin with a square bracket or
-curly brace, it is parsed as if it were enclosed with `{}` curly
-braces.
+HOCON文件如果不以方括号或花括号开头，那么它将以被`{}`包围的方式解析。
 
-A HOCON file is invalid if it omits the opening `{` but still has
-a closing `}`; the curly braces must be balanced.
+一个省略了开头`{`却没有省略结尾`}`的HOCON文件不合法；HOCON格式要求括号必须匹配。
 
-### Key-value separator
+### 键值分隔符
 
-The `=` character can be used anywhere JSON allows `:`, i.e. to
-separate keys from values.
+字符`=`可以被用在所有JSON要求使用`:`的场合，例如：用于分隔键值。
 
-If a key is followed by `{`, the `:` or `=` may be omitted. So
-`"foo" {}` means `"foo" : {}`
+如果一个键随后的字符为`{`，那么中间的`=`可以省略。也就是说，`"foo" {}`和`"foo" : {}`是一样的。
 
-### Commas
+### 逗号
 
-Values in arrays, and fields in objects, need not have a comma
-between them as long as they have at least one ASCII newline
-(`\n`, decimal value 10) between them.
+对于数组里的值，以及对象里的键值对，只要它们之间有至少一个ASCII回车（`\n`，ASCII码为10）分隔，那么逗号就是可有可无的。
 
-The last element in an array or last field in an object may be
-followed by a single comma. This extra comma is ignored.
+最后一个数组里的元素后，或者最后一个对象里的键值对后，可以跟一个逗号。多出来的逗号将被忽略。
 
- - `[1,2,3,]` and `[1,2,3]` are the same array.
- - `[1\n2\n3]` and `[1,2,3]` are the same array.
- - `[1,2,3,,]` is invalid because it has two trailing commas.
- - `[,1,2,3]` is invalid because it has an initial comma.
- - `[1,,2,3]` is invalid because it has two commas in a row.
- - these same comma rules apply to fields in objects.
+ - `[1,2,3,]`和`[1,2,3]`代表同一个数组。
+ - `[1\n2\n3]`和`[1,2,3]`代表同一个数组。
+ - `[1,2,3,,]`不合法，因为它在最后有两个逗号。
+ - `[,1,2,3]`不合法，因为它在开头有一个逗号。
+ - `[1,,2,3]`不合法，因为两个元素中间有两个逗号。
+ - 上面针对逗号的规则同样适用于对象。
 
 ### Whitespace
 
