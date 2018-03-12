@@ -13,8 +13,8 @@
     - [逗号](#%E9%80%97%E5%8F%B7)
     - [空白](#%E7%A9%BA%E7%99%BD)
     - [重复键与对象合并](#%E9%87%8D%E5%A4%8D%E9%94%AE%E4%B8%8E%E5%AF%B9%E8%B1%A1%E5%90%88%E5%B9%B6)
-    - [Unquoted strings](#unquoted-strings)
-    - [Multi-line strings](#multi-line-strings)
+    - [不加引号的字符串](#%E4%B8%8D%E5%8A%A0%E5%BC%95%E5%8F%B7%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2)
+    - [多行字符串](#%E5%A4%9A%E8%A1%8C%E5%AD%97%E7%AC%A6%E4%B8%B2)
     - [Value concatenation](#value-concatenation)
       - [String value concatenation](#string-value-concatenation)
       - [Array and object concatenation](#array-and-object-concatenation)
@@ -189,66 +189,52 @@ JSON 规范中并没有明确同一个对象下重复键的处理方式。在 HO
 
 注意中间为 `"foo"` 赋值为 `null` 的操作阻止了对象的合并。
 
-### Unquoted strings
+### 不加引号的字符串
 
-不被引号括起来的字符串序列，在符合下列条件时，会被认为是字符串值：
+不被引号括起来的字符串序列（Unquoted string），在符合下列条件时，会被认为是字符串值：
 
  - 不包含下列“非法字符”：'$'、'"'、'{'、'}'、'['、']'、':'、'='、','、
    '+'、'#'、'\`'、'^'、'?'、'!'、'@'、'\*'、'&'、'\\'（反斜杠）、
    或者空白。
- - 不包含由两个正斜杠组成的字符串 "//"（它代表注释的开始）。
- - 其开头没有被解析为 `true`、`false`、`null` 或数字。
+ - 不包含由两个正斜杠组成的字符串"//"（它代表注释的开始）。
+ - 其开头没有被解析为`true`、`false`、`null`或数字。
 
-Unquoted strings are used literally, they do not support any kind
-of escaping. Quoted strings may always be used as an alternative
-when you need to write a character that is not permitted in an
-unquoted string.
+不加引号的字符串将按其字面值解析，也就是说不支持转义。如果你想要使用特殊字符，
+而这种特殊字符不允许在不加引号的字符串中出现的话，那你或许总是要加上引号的。
 
-`truefoo` parses as the boolean token `true` followed by the
-unquoted string `foo`. However, `footrue` parses as the unquoted
-string `footrue`. Similarly, `10.0bar` is the number `10.0` then
-the unquoted string `bar` but `bar10.0` is the unquoted string
-`bar10.0`. (In practice, this distinction doesn't matter much
-because of value concatenation; see later section.)
+`truefoo`将被解析面一个布尔值`true`跟随着一个字符串`foo`。不过，`footrue`
+将被解析成不加引号的`footrue`。类似的情况还有，`10.0bar`将被解析成数值`10.0`
+和不加引号的`bar`的组合，而`bar10.0`将被解析成不加引号的`bar10.0`。
+（实际情况是，由于值连结的存在，这种区别无关紧要；请看后续章节。）
 
-In general, once an unquoted string begins, it continues until a
-forbidden character or the two-character string "//" is
-encountered. Embedded (non-initial) booleans, nulls, and numbers
-are not recognized as such, they are part of the string.
+通常情况下，不加引号的字符串将在出现"//"这种两字符字符串，或者不允许在不加引号的
+字符串中出现的字符串结束。在其中（非开头）出现的布尔值，空值（null），以及数值等
+将不会被特殊对待，而是被看作字符串的一部分。
 
-An unquoted string may not _begin_ with the digits 0-9 or with a
-hyphen (`-`, 0x002D) because those are valid characters to begin a
-JSON number. The initial number character, plus any valid-in-JSON
-number characters that follow it, must be parsed as a number
-value. Again, these characters are not special _inside_ an
-unquoted string; they only trigger number parsing if they appear
-initially.
+不加引号的字符串不能以数字0-9或连字符（`-`，0x002D） _开头_ ，因为它们作为JSON
+数值开头是合法的。开始的数字字符以及随后的所有在JSON中作为数值合法的字符，都一定
+会被解析成数值。再强调一次，这种字符在不加引号的字符串 _中间_ 是不被特别对待的；
+只有在开头出现的情况才会被按照数字解析。
 
-Note that quoted JSON strings may not contain control characters
-(control characters include some whitespace characters, such as
-newline). This rule is from the JSON spec. However, unquoted
-strings have no restriction on control characters, other than the
-ones listed as "forbidden characters" above.
+JSON中被引号括起来的字符串不允许包含控制字符（一些控制字符同时作为空白字符使用，
+如换行符等）。JSON规范规定了这一行为。不过，对于不加引号的字符串，没有针对控制字符
+的限制，除非控制字符同时是上面提到的不允许出现的字符。
 
-Some of the "forbidden characters" are forbidden because they
-already have meaning in JSON or HOCON, others are essentially
-reserved keywords to allow future extensions to this spec.
+上面提到的字符不允许出现，一部分是由于它们在JSON或HOCON中已经有其含义，另一部分
+作为保留字使用，以方便未来扩展这一规范。
 
-### Multi-line strings
+### 多行字符串
 
-Multi-line strings are similar to Python or Scala, using triple
-quotes. If the three-character sequence `"""` appears, then all
-Unicode characters until a closing `"""` sequence are used
-unmodified to create a string value. Newlines and whitespace
-receive no special treatment. Unlike Scala, and unlike JSON quoted
-strings, Unicode escapes are not interpreted in triple-quoted
-strings.
+和Python以及Scala等语言类似，多行字符串使用三个引号。如果在解析时解析到了`"""`
+三个字符的序列，那么在下一个用作闭合字符序列的`"""`出现之前，其中所有Unicode字符
+都将被不加修改地用作字符串值的组成部分。不管是空格还是换行符，都不作特殊处理。和
+Scala的处理方式，以及JSON对待被引号括起来的字符串的处理方式不同，转义符在被三个
+引号括起来的字符串中不作处理。
 
-In Python, `"""foo""""` is a syntax error (a triple-quoted string
-followed by a dangling unbalanced quote). In Scala, it is a
-four-character string `foo"`. HOCON works like Scala; any sequence
-of at least three quotes ends the multi-line string, and any
-"extra" quotes are part of the string.
+在Python中，诸如`"""foo""""`的形式会导致语法错误（三个引号的字符串序列后紧跟着
+一个悬空引号）。在Scala中，这种形式将被看作由四个字符组成的字符串`foo"`。HOCON
+的解析方式和Scala类似；序列中的最后三个引号被看作多行字符串的闭合字符序列，而所有
+“多出来的”引号将被看作多行字符串的一部分。
 
 ### Value concatenation
 
