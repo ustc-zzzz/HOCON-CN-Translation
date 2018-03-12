@@ -127,26 +127,22 @@ HOCON文件如果不以方括号或花括号开头，那么它将以被`{}`包�
  - `[1,,2,3]`不合法，因为两个元素中间有两个逗号。
  - 上面针对逗号的规则同样适用于对象。
 
-### Whitespace
+### 空白
 
-The JSON spec simply says "whitespace"; in HOCON whitespace is
-defined as follows:
+JSON 语法规范只简单提到了“空白”（"whitespace"）一词；在 HOCON 中，“空白”定义如下：
 
- - any Unicode space separator (Zs category), line separator (Zl
-   category), or paragraph separator (Zp category), including
-   nonbreaking spaces (such as 0x00A0, 0x2007, and 0x202F).
-   The BOM (0xFEFF) must also be treated as whitespace.
- - tab (`\t` 0x0009), newline ('\n' 0x000A), vertical tab ('\v'
-   0x000B)`, form feed (`\f' 0x000C), carriage return ('\r'
-   0x000D), file separator (0x001C), group separator (0x001D),
-   record separator (0x001E), unit separator (0x001F).
+ - 任何 Unicode 中的空格符（Zs 分类下字符）、换行符（Zl 分类）、或分段符
+   （Zp 分类），包含不换行空格（例如 0x00A0、0x2007 和 0x202F）。
+   字节顺序记号（BOM，0xFEFF）也必须视作空白。
+ - 制表符（`\t`，0x0009）、换行符（`\n`，0x000A）、垂直定位（`\v`，
+   0x000B）、换页符（`\f`，0x000C）、回车符（`\r`，0x000D)、
+   文件分隔符（0x001C）、分组符（0x001D）、记录分隔符（0x001E）
+   和单元分隔符（0x001F）。
 
-In Java, the `isWhitespace()` method covers these characters with
-the exception of nonbreaking spaces and the BOM.
+在 Java 中，`isWhitespace()` 方法可以覆盖除了不换行空格和 BOM以外的上述所有字符。
 
-While all Unicode separators should be treated as whitespace, in
-this spec "newline" refers only and specifically to ASCII newline
-0x000A.
+尽管所有 Unicode 中定义的分隔符都应视作空格，本规范中所称“换行符”（"newline"）指且仅指
+ASCII 换行符 0x000A。
 
 ### Duplicate keys and object merging
 
@@ -1264,8 +1260,8 @@ must be lowercase. Exactly these strings are supported:
 
 ### Period Format
 
-Similar to the `getDuration()` method, there is a `getPeriod()` method 
-available for getting time units as a `java.time.Period`. 
+Similar to the `getDuration()` method, there is a `getPeriod()` method
+available for getting time units as a `java.time.Period`.
 
 This can use the general "units format" described above; bare
 numbers are taken to be in days, while strings are
@@ -1278,7 +1274,7 @@ must be lowercase. Exactly these strings are supported:
  - `w`, `week`, `weeks`
  - `m`, `mo`, `month`, `months` (note that if you are using `getTemporal()`
  which may return either a `java.time.Duration` or a `java.time.Period`
- you will want to use `mo` rather than `m` to prevent your unit being 
+ you will want to use `mo` rather than `m` to prevent your unit being
  parsed as minutes)
  - `y`, `year`, `years`
 
