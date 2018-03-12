@@ -15,11 +15,11 @@
     - [重复键与对象合并](#%E9%87%8D%E5%A4%8D%E9%94%AE%E4%B8%8E%E5%AF%B9%E8%B1%A1%E5%90%88%E5%B9%B6)
     - [不加引号的字符串](#%E4%B8%8D%E5%8A%A0%E5%BC%95%E5%8F%B7%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2)
     - [多行字符串](#%E5%A4%9A%E8%A1%8C%E5%AD%97%E7%AC%A6%E4%B8%B2)
-    - [Value concatenation](#value-concatenation)
-      - [String value concatenation](#string-value-concatenation)
-      - [Array and object concatenation](#array-and-object-concatenation)
-      - [Note: Concatenation with whitespace and substitutions](#note-concatenation-with-whitespace-and-substitutions)
-      - [Note: Arrays without commas or newlines](#note-arrays-without-commas-or-newlines)
+    - [值连结](#%E5%80%BC%E8%BF%9E%E7%BB%93)
+      - [字符串值连结](#%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%80%BC%E8%BF%9E%E7%BB%93)
+      - [数组值连结和对象值连结](#%E6%95%B0%E7%BB%84%E5%80%BC%E8%BF%9E%E7%BB%93%E5%92%8C%E5%AF%B9%E8%B1%A1%E5%80%BC%E8%BF%9E%E7%BB%93)
+      - [注意：引用之间含有空白的值连结](#%E6%B3%A8%E6%84%8F%E5%BC%95%E7%94%A8%E4%B9%8B%E9%97%B4%E5%90%AB%E6%9C%89%E7%A9%BA%E7%99%BD%E7%9A%84%E5%80%BC%E8%BF%9E%E7%BB%93)
+      - [注意：不含有逗号或换行符的数组](#%E6%B3%A8%E6%84%8F%E4%B8%8D%E5%90%AB%E6%9C%89%E9%80%97%E5%8F%B7%E6%88%96%E6%8D%A2%E8%A1%8C%E7%AC%A6%E7%9A%84%E6%95%B0%E7%BB%84)
     - [Path expressions](#path-expressions)
     - [Paths as keys](#paths-as-keys)
     - [Substitutions](#substitutions)
@@ -208,112 +208,62 @@ JSON中被引号括起来的字符串不允许包含控制字符（一些控制�
 
 在Python中，诸如`"""foo""""`的形式会导致语法错误（三个引号的字符串序列后紧跟着一个悬空引号）。在Scala中，这种形式将被看作由四个字符组成的字符串`foo"`。HOCON的解析方式和Scala类似；序列中的最后三个引号被看作多行字符串的闭合字符序列，而所有“多出来的”引号将被看作多行字符串的一部分。
 
-### Value concatenation
+### 值连结
 
-The value of an object field or array element may consist of
-multiple values which are combined. There are three kinds of value
-concatenation:
+对象中键值对的值或者数组元素可能表现为多个合在一起的值的组合。有三种值连结的方式：
 
- - if all the values are simple values (neither objects nor
-   arrays), they are concatenated into a string.
- - if all the values are arrays, they are concatenated into
-   one array.
- - if all the values are objects, they are merged (as with
-   duplicate keys) into one object.
+ - 所有简单值（不含对象或数组）的组合为字符串（字符串值连结）。
+ - 所有数组的组合为合并后的单个数组（数组值连结）。
+ - 所有对象的组合为合并（考虑相同键）后的单个对象（对象值连结）。
 
-String value concatenation is allowed in field keys, in addition
-to field values and array elements. Objects and arrays do not make
-sense as field keys.
+除键值对的值和数组元素外，键值对的键也支持字符串值连结。对于键值对的键来说，对象或数组的组合没有意义。
 
-Note: Akka 2.0 (and thus Play 2.0) contains an embedded
-implementation of the config lib which does not support array and
-object value concatenation; it only supports string value
-concatenation.
+注意：Akka 2.0（因此也包括Play 2.0）针对配置文件的内置实现不支持针对数组或对象的值连结；其支持的只有字符串值连结。
 
-#### String value concatenation
+#### 字符串值连结
 
-String value concatenation is the trick that makes unquoted
-strings work; it also supports substitutions (`${foo}` syntax) in
-strings.
+字符串值连结保证了未加引号的字符串正常工作；字符串值连结同时提供了对引用（诸如`${foo}`的形式）的支持。
 
-Only simple values participate in string value
-concatenation. Recall that a simple value is any value other than
-arrays and objects.
+字符串值连结只允许简单值的组合。再次强调简单值的定义为除数组和对象外的其他类型值。
 
-As long as simple values are separated only by non-newline
-whitespace, the _whitespace between them is preserved_ and the
-values, along with the whitespace, are concatenated into a string.
+只要简单值仅由换行符之外的空白分隔， _它们之间的空白就会被保留_ ，使值与空白连结组成一个字符串。
 
-String value concatenations never span a newline, or a character
-that is not part of a simple value.
+字符串值连结将不会跨过换行符，或者任何不属于简单值的字符。
 
-A string value concatenation may appear in any place that a string
-may appear, including object keys, object values, and array
-elements.
+所有字符串可能出现的地方都可能出现字符串值连结，比如说对象的键和值以及数组元素。
 
-Whenever a value would appear in JSON, a HOCON parser instead
-collects multiple values (including the whitespace between them)
-and concatenates those values into a string.
+无论何时，如果一个值本当出现在JSON中，那么一个HOCON解析器会在对应位置尝试收集多个值（包括它们之间的空白），并将这些值连接成一个字符串。
 
-Whitespace before the first and after the last simple value must
-be discarded. Only whitespace _between_ simple values must be
-preserved.
+在第一个值前或最后一个值后的空白将会被忽略。只有值 _之间_ 的空白会被保留。
 
-So for example ` foo bar baz ` parses as three unquoted strings,
-and the three are value-concatenated into one string. The inner
-whitespace is kept and the leading and trailing whitespace is
-trimmed. The equivalent string, written in quoted form, would be
-`"foo bar baz"`.
+所以比如说` foo bar baz `会被解析成三个未加引号的字符串，然后这三个字符串会被连结成一个字符串。中间的空白将会被保留，但是两边的空白会被去除。因为等价的，被引号括起来的字符串形式为`"foo bar baz"`。
 
-Value concatenating `foo bar` (two unquoted strings with
-whitespace) and quoted string `"foo bar"` would result in the same
-in-memory representation, seven characters.
+值连结后的`foo bar`（两个未加引号的字符串以及中间的空白）和被引号引用的`"foo bar"`在解析后内存里的形式是一样，都是七个字符的字符串。
 
-For purposes of string value concatenation, non-string values are
-converted to strings as follows (strings shown as quoted strings):
+为保证字符串值连结，非字符串类型的值将会以以下规则转换成字符串（以下转换结果使用被引号引用的形式）：
 
- - `true` and `false` become the strings `"true"` and `"false"`.
- - `null` becomes the string `"null"`.
- - quoted and unquoted strings are themselves.
- - numbers should be kept as they were originally written in the
-   file. For example, if you parse `1e5` then you might render
-   it alternatively as `1E5` with capital `E`, or just `100000`.
-   For purposes of value concatenation, it should be rendered
-   as it was written in the file.
- - a substitution is replaced with its value which is then
-   converted to a string as above.
- - it is invalid for arrays or objects to appear in a string value
-   concatenation.
+ - `true`和`false`分别转换为`"true"`和`"false"`。
+ - `null`转换为`"null"`。
+ - 加或不加引号的字符串转换到其本身。
+ - 数值应转换为其在文件中原有的形式。比如说如果一个解析器尝试解析`1e5`，那么解析形式可能还会有包含有字母`E`的`1E5`或者`100000`。为了保证字符串值连结，解析时应保持其在文件中原有的形式。
+ - 引用将会被替换成其对应值，然后再按照上面的规则转换成字符串。
+ - 字符串值连结中出现数组或对象是不合法的。
 
-A single value is never converted to a string. That is, it would
-be wrong to value concatenate `true` by itself; that should be
-parsed as a boolean-typed value. Only `true foo` (`true` with
-another simple value on the same line) should be parsed as a value
-concatenation and converted to a string.
+单个值不应转换成字符串。换言之，如果你试图使用值连结的方式对待`true`本身，那么解析结果就会出错；因为解析时应该当作布尔值对待。只有诸如`true foo`（`true`后面同一行跟着另一个简单值）的形式才能以值连结的方式解析并转换成字符串。
 
-#### Array and object concatenation
+#### 数组值连结和对象值连结
 
-Arrays can be concatenated with arrays, and objects with objects,
-but it is an error if they are mixed.
+数组可以和数组之间值连结，对象也可以和对象之间值连结，但如果混着来就会出错。
 
-For purposes of concatenation, "array" also means "substitution
-that resolves to an array" and "object" also means "substitution
-that resolves to an object."
+为保证值连结，“数组”同时也包括“值为数组的引用”，同时“对象”同时也包括“值为对象的引用。”
 
-Within an field value or array element, if only non-newline
-whitespace separates the end of a first array or object or
-substitution from the start of a second array or object or
-substitution, the two values are concatenated. Newlines may occur
-_within_ the array or object, but not _between_ them. Newlines
-_between_ prevent concatenation.
+在键值对的值或数组元素中，如果第一个数组或对象或引用的末尾，以及第二个数组或对象或引用的开头，只有换行符之外的空白分隔，那么两个值将会进行值连结。
 
-For objects, "concatenation" means "merging", so the second object
-overrides the first.
+对于对象来说，“连结”意味着“合并”，因此后一个值将会覆盖前一个。
 
-Arrays and objects cannot be field keys, whether concatenation is
-involved or not.
+不管是否存在值连结，数组和对象都不能成为键值对的键。
 
-Here are several ways to define `a` to the same object value:
+下面的几种方式定义的对象`a`是完全等价的：
 
     // one object
     a : { b : 1, c : 2 }
@@ -323,7 +273,7 @@ Here are several ways to define `a` to the same object value:
     a : { b : 1 }
     a : { c : 2 }
 
-Here are several ways to define `a` to the same array value:
+下面的几种方式定义的数组`a`是完全等价的：
 
     // one array
     a : [ 1, 2, 3, 4 ]
@@ -334,30 +284,23 @@ Here are several ways to define `a` to the same array value:
     a : [ 1, 2 ]
     a : ${a} [ 3, 4 ]
 
-A common use of object concatenation is "inheritance":
+一种常见的对象值连结用法和“继承”类似：
 
     data-center-generic = { cluster-size = 6 }
     data-center-east = ${data-center-generic} { name = "east" }
 
-A common use of array concatenation is to add to paths:
+一种常见的数组值连结用法被用于文件路径集合：
 
     path = [ /bin ]
     path = ${path} [ /usr/bin ]
 
-#### Note: Concatenation with whitespace and substitutions
+#### 注意：引用之间含有空白的值连结
 
-When concatenating substitutions such as `${foo} ${bar}`, the
-substitutions may turn out to be strings (which makes the
-whitespace between them significant) or may turn out to be objects
-or lists (which makes it irrelevant). Unquoted whitespace must be
-ignored in between substitutions which resolve to objects or
-lists. Quoted whitespace should be an error.
+如果你试图使用`${foo} ${bar}`等形式连结两个引用，那么被连结的引用可能会转换成字符串（这使得其之间的空白十分重要），可能会转换成对象或者列表（在这里其之间的空白无关紧要）。对于其值为对象或者列表的引用，其之间的空白应该被忽略。如果空白被引号括了起来，将产生语法错误。
 
-#### Note: Arrays without commas or newlines
+#### 注意：不含有逗号或换行符的数组
 
-Arrays allow you to use newlines instead of commas, but not
-whitespace instead of commas. Non-newline whitespace will produce
-concatenation rather than separate elements.
+在数组中，你可以使用换行符代替逗号，不过你不能使用空格代替逗号。因此换行符之外的空白将导致数组元素值连结而不是数组元素值分隔。
 
     // this is an array with one element, the string "1 2 3 4"
     [ 1 2 3 4 ]
@@ -373,13 +316,12 @@ concatenation rather than separate elements.
     [ [ 1, 2 ]
       [ 3, 4 ] ]
 
-If this gets confusing, just use commas. The concatenation
-behavior is useful rather than surprising in cases like:
+如果你对此感到迷惑，你应该用一用逗号。在下面的情况下，值连结行为是足够有用的，而不是令人惊讶的：
 
     [ This is an unquoted string my name is ${name}, Hello ${world} ]
     [ ${a} ${b}, ${x} ${y} ]
 
-Non-newline whitespace is never an element or field separator.
+换行符之外的空白不会被用作元素和键值对的分隔符。
 
 ### Path expressions
 
