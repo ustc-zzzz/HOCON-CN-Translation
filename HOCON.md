@@ -11,8 +11,8 @@
     - [对根结构更宽松的要求](#%E5%AF%B9%E6%A0%B9%E7%BB%93%E6%9E%84%E6%9B%B4%E5%AE%BD%E6%9D%BE%E7%9A%84%E8%A6%81%E6%B1%82)
     - [键值分隔符](#%E9%94%AE%E5%80%BC%E5%88%86%E9%9A%94%E7%AC%A6)
     - [逗号](#%E9%80%97%E5%8F%B7)
-    - [Whitespace](#whitespace)
-    - [Duplicate keys and object merging](#duplicate-keys-and-object-merging)
+    - [空白](#%E7%A9%BA%E7%99%BD)
+    - [重复键与对象合并](#%E9%87%8D%E5%A4%8D%E9%94%AE%E4%B8%8E%E5%AF%B9%E8%B1%A1%E5%90%88%E5%B9%B6)
     - [Unquoted strings](#unquoted-strings)
     - [Multi-line strings](#multi-line-strings)
     - [Value concatenation](#value-concatenation)
@@ -144,36 +144,27 @@ JSON 语法规范只简单提到了“空白”（"whitespace"）一词；在 HO
 尽管所有 Unicode 中定义的分隔符都应视作空格，本规范中所称“换行符”（"newline"）指且仅指
 ASCII 换行符 0x000A。
 
-### Duplicate keys and object merging
+### 重复键与对象合并
 
-The JSON spec does not clarify how duplicate keys in the same
-object should be handled. In HOCON, duplicate keys that appear
-later override those that appear earlier, unless both values are
-objects. If both values are objects, then the objects are merged.
+JSON 规范中并没有明确同一个对象下重复键的处理方式。在 HOCON 中，重复的键
+的处理方式是以后来者为准，即后出现的键的值覆盖先前出现的；但如果重复的键对
+应的值都是对象，那么两个对象会合并在一起。
 
-Note: this would make HOCON a non-superset of JSON if you assume
-that JSON requires duplicate keys to have a behavior. The
-assumption here is that duplicate keys are invalid JSON.
+注意：如果你假定 JSON 中重复的键有特定行为，HOCON 将不再是 JSON 的超集。
+本规范中假定 JSON 不允许重复的键。
 
-To merge objects:
+合并对象的过程如下：
 
- - add fields present in only one of the two objects to the merged
-   object.
- - for non-object-valued fields present in both objects,
-   the field found in the second object must be used.
- - for object-valued fields present in both objects, the
-   object values should be recursively merged according to
-   these same rules.
+ - 将两个对象中其中一个下的所有键值对加入另一个中。
+ - 对于两个对象中的同名非对象键值对，必须使用第二个对象中的键值对。
+ - 对于两个对象中的同名对象键值对，须遵循一样的规则递归合并。
 
-Object merge can be prevented by setting the key to another value
-first. This is because merging is always done two values at a
-time; if you set a key to an object, a non-object, then an object,
-first the non-object falls back to the object (non-object always
-wins), and then the object falls back to the non-object (no
-merging, object is the new value). So the two objects never see
-each other.
+对象的合并可以通过预先给键赋另外一个值来避免。这是因为，合并总是围绕两个值进行的。
+如果你先给一个键赋值为对象，然后赋一个非对象的值，接着再赋值为另一个对象，那么首先
+第一个对象会被那个非对象的值覆盖（非对象总是会覆盖对象），然后第二个对象将原本的值
+覆盖掉（没有合并，直接赋值）。因此两个对象之间什么事也没有发生。
 
-These two are equivalent:
+下面两段 HOCON 是等价的：
 
     {
         "foo" : { "a" : 42 },
@@ -184,7 +175,7 @@ These two are equivalent:
         "foo" : { "a" : 42, "b" : 43 }
     }
 
-And these two are equivalent:
+下面两段 HOCON 也是等价的：
 
     {
         "foo" : { "a" : 42 },
@@ -196,20 +187,17 @@ And these two are equivalent:
         "foo" : { "b" : 43 }
     }
 
-The intermediate setting of `"foo"` to `null` prevents the object merge.
+注意中间为 `"foo"` 赋值为 `null` 的操作阻止了对象的合并。
 
 ### Unquoted strings
 
-A sequence of characters outside of a quoted string is a string
-value if:
+不被引号括起来的字符串序列，在符合下列条件时，会被认为是字符串值：
 
- - it does not contain "forbidden characters": '$', '"', '{', '}',
-   '[', ']', ':', '=', ',', '+', '#', '`', '^', '?', '!', '@',
-   '*', '&', '\' (backslash), or whitespace.
- - it does not contain the two-character string "//" (which
-   starts a comment)
- - its initial characters do not parse as `true`, `false`, `null`,
-   or a number.
+ - 不包含下列“非法字符”：'$'、'"'、'{'、'}'、'['、']'、':'、'='、','、
+   '+'、'#'、'\`'、'^'、'?'、'!'、'@'、'\*'、'&'、'\\'（反斜杠）、
+   或者空白。
+ - 不包含由两个正斜杠组成的字符串 "//"（它代表注释的开始）。
+ - 其开头没有被解析为 `true`、`false`、`null` 或数字。
 
 Unquoted strings are used literally, they do not support any kind
 of escaping. Quoted strings may always be used as an alternative
