@@ -20,9 +20,9 @@
       - [数组值连结和对象值连结](#%E6%95%B0%E7%BB%84%E5%80%BC%E8%BF%9E%E7%BB%93%E5%92%8C%E5%AF%B9%E8%B1%A1%E5%80%BC%E8%BF%9E%E7%BB%93)
       - [注意：引用之间含有空白的值连结](#%E6%B3%A8%E6%84%8F%E5%BC%95%E7%94%A8%E4%B9%8B%E9%97%B4%E5%90%AB%E6%9C%89%E7%A9%BA%E7%99%BD%E7%9A%84%E5%80%BC%E8%BF%9E%E7%BB%93)
       - [注意：不含有逗号或换行符的数组](#%E6%B3%A8%E6%84%8F%E4%B8%8D%E5%90%AB%E6%9C%89%E9%80%97%E5%8F%B7%E6%88%96%E6%8D%A2%E8%A1%8C%E7%AC%A6%E7%9A%84%E6%95%B0%E7%BB%84)
-    - [Path expressions](#path-expressions)
-    - [Paths as keys](#paths-as-keys)
-    - [Substitutions](#substitutions)
+    - [路径表达式](#%E8%B7%AF%E5%BE%84%E8%A1%A8%E8%BE%BE%E5%BC%8F)
+    - [作为键的路径表达式](#%E4%BD%9C%E4%B8%BA%E9%94%AE%E7%9A%84%E8%B7%AF%E5%BE%84%E8%A1%A8%E8%BE%BE%E5%BC%8F)
+    - [引用](#%E5%BC%95%E7%94%A8)
       - [Self-Referential Substitutions](#self-referential-substitutions)
       - [The `+=` field separator](#the--field-separator)
       - [Examples of Self-Referential Substitutions](#examples-of-self-referential-substitutions)
@@ -323,112 +323,76 @@ JSON中被引号括起来的字符串不允许包含控制字符（一些控制�
 
 换行符之外的空白不会被用作元素和键值对的分隔符。
 
-### Path expressions
+### 路径表达式
 
-Path expressions are used to write out a path through the object
-graph. They appear in two places; in substitutions, like
-`${foo.bar}`, and as the keys in objects like `{ foo.bar : 42 }`.
+路径表达式（Path expression）被用于表示对象树中的一个路径。一些诸如`${foo.bar}`等使用引用的场合，以及诸如`{ foo.bar : 42 }`等使用键值对的键的场合会用到路径表达式。
 
-Path expressions are syntactically identical to a value
-concatenation, except that they may not contain
-substitutions. This means that you can't nest substitutions inside
-other substitutions, and you can't have substitutions in keys.
+路径表达式在语法上与值连结相同，但不会包含引用。这意味着你不能在引用中使用引用，以及你也不能在键值对的键中使用引用。
 
-When concatenating the path expression, any `.` characters outside
-quoted strings are understood as path separators, while inside
-quoted strings `.` has no special meaning. So
-`foo.bar."hello.world"` would be a path with three elements,
-looking up key `foo`, key `bar`, then key `hello.world`.
+在路径表达式中，被引号括起来的字符串外的`.`被当作分隔路径的分隔符处理，而被引号括起来的字符串内的`.`不作特殊处理。因此`foo.bar."hello.world"`代表一个有三个组成部分的路径表达式，前两个分别是`foo`和`bar`，最后一个是`hello.world`。
 
-The main tricky point is that `.` characters in numbers do count
-as a path separator. When dealing with a number as part of a path
-expression, it's essential to retain the _original_ string
-representation of the number as it appeared in the file (rather
-than converting it back to a string with a generic
-number-to-string library function).
+需要注意的一点是，数字之间的`.`将被当作分隔符处理。因此如果将数字作为路径表达式的一部分进行处理，那么必须将其以文件中出现的 _原始_ 字符串表示形式处理（而不是使用一些通用的函数将其从数字转换回字符串）。
 
- - `10.0foo` is a number then unquoted string `foo` and should
-   be the two-element path with `10` and `0foo` as the elements.
- - `foo10.0` is an unquoted string with a `.` in it, so this would
-   be a two-element path with `foo10` and `0` as the elements.
- - `foo"10.0"` is an unquoted then a quoted string which are
-   concatenated, so this is a single-element path.
- - `1.2.3` is the three-element path with `1`,`2`,`3`
+ - `10.0foo`表现为一个数字和一个不加引号的`foo`的连结因此应以`10`和`0foo`两个元素的方式解析。
+ - `foo10.0`表现为一个包含有`.`的不加引号的字符串因此应以`foo10`和`0`两个元素的方式解析。
+ - `foo"10.0"`表现为一个不加引号的和一个加引号的字符串的连结因此应以单个元素的方式解析。
+ - `1.2.3`应以表现为`1`、`2`、和`3`三个元素的组合方式解析。
 
-Unlike value concatenations, path expressions are _always_
-converted to a string, even if they are just a single value.
+和值连结不同，路径表达式应 _总是_ 被转换成字符串，即使其只代表一个值。
 
-If you have an array or element value consisting of the single
-value `true`, it's a value concatenation and retains its character
-as a boolean value.
+如果在解析时遇到一个数组，其中一个元素的值为单个`true`，那么解析时应当作值连结的方式处理，也就是应以布尔值的方式处理。
 
-If you have a path expression (in a key or substitution) then it
-must always be converted to a string, so `true` becomes the string
-that would be quoted as `"true"`.
+如果在解析（键值对的键或者引用）时遇到一个路径表达式，那么其应总是当作字符串处理，因此`true`应被当作一个字符串，其被引号括起来的形式是`"true"`。
 
-If a path element is an empty string, it must always be quoted.
-That is, `a."".b` is a valid path with three elements, and the
-middle element is an empty string. But `a..b` is invalid and
-should generate an error. Following the same rule, a path that
-starts or ends with a `.` is invalid and should generate an error.
+如果路径表达式是空字符串，那么它应永远被引号括起来。换言之，`a."".b`代表一个有着三个元素的路径表达式。不过，`a..b`是不合法的，并应在解析时报错。按照这样的规则，所有在开头或者结尾时出现`.`的路径表达式，都应被当作不合法的情况在解析时报错处理。
 
-### Paths as keys
+### 作为键的路径表达式
 
-If a key is a path expression with multiple elements, it is
-expanded to create an object for each path element other than the
-last. The last path element, combined with the value, becomes a
-field in the most-nested object.
+如果一个键同时也是一个包含有多个元素的路径表达式，那么在解析时除最后一个元素外的所有元素都将被展开成对象。路径的最后一个元素与值结合，从而最后形成嵌套对象中的一个键值对。
 
-In other words:
+换言之：
 
     foo.bar : 42
 
-is equivalent to:
+和：
 
     foo { bar : 42 }
 
-and:
+是等价的。以及：
 
     foo.bar.baz : 42
 
-is equivalent to:
+和：
 
     foo { bar { baz : 42 } }
 
-and so on. These values are merged in the usual way; which implies
-that:
+也是等价的。对象的值会进行合并；也就是说：
 
     a.x : 42, a.y : 43
 
-is equivalent to:
+和：
 
     a { x : 42, y : 43 }
 
-Because path expressions work like value concatenations, you can
-have whitespace in keys:
+是等价的。因为路径表达式和值连结类似，所以说你可以在键值对的键中使用空格，比如说：
 
     a b c : 42
 
-is equivalent to:
+和：
 
     "a b c" : 42
 
-Because path expressions are always converted to strings, even
-single values that would normally have another type become
-strings.
+是等价的。此外，因为路径表达式总是被转换成字符串，因此即使是拥有其他类型含义的单个值，也会被转换成字符串类型。
 
-   - `true : 42` is `"true" : 42`
-   - `3 : 42` is `"3" : 42`
-   - `3.14 : 42` is `"3" : { "14" : 42 }`
+   - `true : 42`和`"true" : 42`等价
+   - `3 : 42`和`"3" : 42`等价
+   - `3.14 : 42`和`"3" : { "14" : 42 }`等价
 
-As a special rule, the unquoted string `include` may not begin a
-path expression in a key, because it has a special interpretation
-(see below).
+有一条特殊的规则，就是不加引号的`include`如果被用于键值对的键，那么它不能作为路径表达式的开头，因为其有特殊含义（见后续章节）。
 
-### Substitutions
+### 引用
 
-Substitutions are a way of referring to other parts of the
-configuration tree.
+引用（Substitution）配置文件树中的其他部分是HOCON允许的一种形式。
 
 The syntax is `${pathexpression}` or `${?pathexpression}` where
 the `pathexpression` is a path expression as described above. This
