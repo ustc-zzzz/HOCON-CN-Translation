@@ -24,10 +24,10 @@
     - [作为键的路径表达式](#%E4%BD%9C%E4%B8%BA%E9%94%AE%E7%9A%84%E8%B7%AF%E5%BE%84%E8%A1%A8%E8%BE%BE%E5%BC%8F)
     - [引用](#%E5%BC%95%E7%94%A8)
       - [自引用](#%E8%87%AA%E5%BC%95%E7%94%A8)
-      - [键值分隔符 `+=`](#%E9%94%AE%E5%80%BC%E5%88%86%E9%9A%94%E7%AC%A6%20%2B%3D)
+      - [键值分隔符 `+=`](#%E9%94%AE%E5%80%BC%E5%88%86%E9%9A%94%E7%AC%A6-)
       - [自引用举例](#%E8%87%AA%E5%BC%95%E7%94%A8%E4%B8%BE%E4%BE%8B)
-    - [Includes](#includes)
-      - [Include syntax](#include-syntax)
+    - [跨文件引用](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8)
+      - [跨文件引用语法](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E6%B3%95)
       - [Include semantics: merging](#include-semantics-merging)
       - [Include semantics: substitution](#include-semantics-substitution)
       - [Include semantics: missing files and required files](#include-semantics-missing-files-and-required-files)
@@ -621,73 +621,48 @@ rather than by the path inside the `${}` expression, because
 substitutions may be resolved differently depending on their
 position in the file.
 
-### Includes
+### 跨文件引用
 
-#### Include syntax
+#### 跨文件引用语法
 
-An _include statement_ consists of the unquoted string `include`
-followed by whitespace and then either:
- - a single _quoted_ string which is interpreted heuristically as
-   URL, filename, or classpath resource.
- - `url()`, `file()`, or `classpath()` surrounding a quoted string
-   which is then interpreted as a URL, file, or classpath. The
-   string must be quoted, unlike in CSS.
- - `required()` surrounding one of the above
+_跨文件引用声明_ 由未加括号的`include`和随后的空白符及之后的：
+ - 单个被引号 _括起来的_ 字符串。这种声明会被启发式地解释为URL，文件名或classpath中的相关资源。
+ - 被`url()`、`file()`、或者`classpath()`括起来的加了引号的字符串。这种声明会被分别解析为URL，文件名或classpath。和CSS等情况不同的是，其中的字符串必须使用引号括起来。
+ - 被`required()`括起来的上述情况之一。
 
-An include statement can appear in place of an object field.
+跨文件引用声明应用于原为键值对的地方。
 
-If the unquoted string `include` appears at the start of a path
-expression where an object key would be expected, then it is not
-interpreted as a path expression or a key.
+如果`include`出现在一个路径表达式的开头，而该路径表达式本身作为对象的键存在，那么它将不会被以路径表达式或者键的方式解析。
 
-Instead, the next value must be a _quoted_ string or a quoted
-string surrounded by `url()`, `file()`, or `classpath()`.
-This value is the _resource name_.
+作为替代键值对的声明，`include`后必须跟随一个被引号 _括起来的_ 字符串，或者一个被引号括起来，又被`url()`、`file()`、或者`classpath()`括起来的字符串。该字符串值被称为 _资源名称_ 。
 
-Together, the unquoted `include` and the resource name substitute
-for an object field syntactically, and are separated from the
-following object fields or includes by the usual comma (and as
-usual the comma may be omitted if there's a newline).
+总的来说，`include`以及其后的资源名称被用于原为键值对的地方，因此语法上，跨文件引用声明应通过逗号（如果有换行符的话逗号可以省略）和其他键值对分隔。
 
-If an unquoted `include` at the start of a key is followed by
-anything other than a single quoted string or the
-`url("")`/`file("")`/`classpath("")` syntax, it is invalid and an
-error should be generated.
+如果`include`出现在对象的键的位置，而随后没有出现被引号括起来的字符串或者`url("")`/`file("")`/`classpath("")`等形式，那么这种声明是不合法的，从而在解析时应该报错。
 
-There can be any amount of whitespace, including newlines, between
-the unquoted `include` and the resource name. For `url()` etc.,
-whitespace is allowed inside the parentheses `()` (outside of the
-quotes).
+在`include`和资源名称之间可以有任意多的空白，包括换行符。对于`url()`等声明形式，`()`内（以及引号外）同样允许出现空白。
 
-Value concatenation is NOT performed on the "argument" to
-`include` or `url()` etc. The argument must be a single quoted
-string. No substitutions are allowed, and the argument may not be
-an unquoted string or any other kind of value.
+在`include`后或`url()`等形式中，不允许使用值连结。其值只能使用被引号括起来的字符串形式。引用形式也不被允许，换言之，除被引号括起来的字符串，其他情形都不被允许。
 
-Unquoted `include` has no special meaning if it is not the start
-of a key's path expression.
+在对象的键的开始位置之外的`include`没有特殊意义。
 
-It may appear later in the key:
+`include`可以出现在对象的键的声明中：
 
     # this is valid
     { foo include : 42 }
     # equivalent to
     { "foo include" : 42 }
 
-It may appear as an object or array value:
+或者作为对象或者数组的值：
 
     { foo : include } # value is the string "include"
     [ include ]       # array of one string "include"
 
-You can quote `"include"` if you want a key that starts with the
-word `"include"`, only unquoted `include` is special:
+如果你想使用以`"include"`开头的字符串作为对象的键，你可以将其括起来，也就是`"include"`的形式，只有不加引号的`include`是特殊的：
 
     { "include" : 42 }
 
-Note: Akka 2.0 (and thus Play 2.0) contains an embedded
-implementation of the config lib which does not support the
-`url()`/`file()`/`classpath()` syntax. Only the heuristic `include
-"foo"` syntax is supported in that version.
+注意：Akka 2.0（因此也包括Play 2.0）针对配置文件的内置实现不支持`url()`/`file()`/`classpath()`形式的跨文件引用。相应的实现只支持启发式的`include "foo"`等形式。
 
 #### Include semantics: merging
 
