@@ -28,7 +28,7 @@
       - [自引用举例](#%E8%87%AA%E5%BC%95%E7%94%A8%E4%B8%BE%E4%BE%8B)
     - [跨文件引用](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8)
       - [跨文件引用语法](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E6%B3%95)
-      - [Include semantics: merging](#include-semantics-merging)
+      - [跨文件引用语义：合并](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E4%B9%89%E5%90%88%E5%B9%B6)
       - [Include semantics: substitution](#include-semantics-substitution)
       - [Include semantics: missing files and required files](#include-semantics-missing-files-and-required-files)
       - [Include semantics: file formats and extensions](#include-semantics-file-formats-and-extensions)
@@ -480,7 +480,7 @@ _自引用键值对_ 指：
 
 `+=` 起到了在数组结尾追加元素的作用。如果 `a` 之前的值不是数组，它会产生和 `a = ${?a} [b]` 一样的报错。注意，`a` 的值不一定必须存在（`${?a}` 而非 `${a}`），换言之 `a += b` 这样的声明可以是全文件中第一次出现 `a` 的地方（即不需要 `a = []` 这样的显式声明）。
 
-注意：Akka 2.0（因此也包括 Play 2.0）内嵌的 Config lib 的实现中不支持 `+=`。
+注意：Akka 2.0（因此也包括 Play 2.0）针对配置文件的内置实现不支持`+=`。
 
 #### 自引用举例
 
@@ -664,31 +664,18 @@ _跨文件引用声明_ 由未加括号的`include`和随后的空白符及之�
 
 注意：Akka 2.0（因此也包括Play 2.0）针对配置文件的内置实现不支持`url()`/`file()`/`classpath()`形式的跨文件引用。相应的实现只支持启发式的`include "foo"`等形式。
 
-#### Include semantics: merging
+#### 跨文件引用语义：合并
 
-An _including file_ contains the include statement and an
-_included file_ is the one specified in the include statement.
-(They need not be regular files on a filesystem, but assume they
-are for the moment.)
+我们定义 _文件引用者（including file）_ 为跨文件引用声明的文件，同时定义 _被引用文件（included file）_ 为跨文件引用声明中的值对应的文件。（文件引用者和被引用文件不一定总是文件系统中的文件，不过这里我们先假设它们都是。）
 
-An included file must contain an object, not an array. This is
-significant because both JSON and HOCON allow arrays as root
-values in a document.
+被引用文件必须包含一个对象，而不是数组。这很重要，因为不管是JSON还是HOCON都允许数组或者对象作为文件的根节点。
 
-If an included file contains an array as the root value, it is
-invalid and an error should be generated.
+如果被引用文件包含了一个数组，那么跨文件引用声明就是不合法的，也就是说解析时会报错。
 
-The included file should be parsed, producing a root object. The
-keys from the root object are conceptually substituted for the
-include statement in the including file.
+被引用文件会被解析成一个根对象。根对象的键在概念上代替了文件引用者中的跨文件引用声明。
 
- - If a key in the included object occurred prior to the include
-   statement in the including object, the included key's value
-   overrides or merges with the earlier value, exactly as with
-   duplicate keys found in a single file.
- - If the including file repeats a key from an earlier-included
-   object, the including file's value would override or merge
-   with the one from the included file.
+ - 在跨文件引用声明前出现的键值对将被覆盖或者合并，其行为和一个文件中同时出现两个相同键值对的行为等同。
+ - 在跨文件引用声明后重复出现的键值对，将会覆盖或者合并被引用文件中的键值对。
 
 #### Include semantics: substitution
 
