@@ -24,8 +24,8 @@
     - [作为键的路径表达式](#%E4%BD%9C%E4%B8%BA%E9%94%AE%E7%9A%84%E8%B7%AF%E5%BE%84%E8%A1%A8%E8%BE%BE%E5%BC%8F)
     - [引用](#%E5%BC%95%E7%94%A8)
       - [自引用](#%E8%87%AA%E5%BC%95%E7%94%A8)
-      - [键值分隔符 `+=`](%E9%94%AE%E5%80%BC%E5%88%86%E9%9A%94%E7%AC%A6%20%60%2B%3D%60)
-      - [Examples of Self-Referential Substitutions](#examples-of-self-referential-substitutions)
+      - [键值分隔符 `+=`](#%E9%94%AE%E5%80%BC%E5%88%86%E9%9A%94%E7%AC%A6%20%60%2B%3D%60)
+      - [自引用举例](#%E8%87%AA%E5%BC%95%E7%94%A8%E4%B8%BE%E4%BE%8B)
     - [Includes](#includes)
       - [Include syntax](#include-syntax)
       - [Include semantics: merging](#include-semantics-merging)
@@ -482,38 +482,31 @@ _自引用键值对_ 指：
 
 注意：Akka 2.0（因此也包括 Play 2.0）内嵌的 Config lib 的实现中不支持 `+=`。
 
-#### Examples of Self-Referential Substitutions
+#### 自引用举例
 
-In isolation (with no merges involved), a self-referential field
-is an error because the substitution cannot be resolved:
+在没有合并的情况下，自引用的键值对是非法的，因为其具体值无法解析：
 
     foo : ${foo} // an error
 
-When `foo : ${foo}` is merged with an earlier value for `foo`,
-however, the substitution can be resolved to that earlier value.
-When merging two objects, the self-reference in the overriding
-field refers to the overridden field. Say you have:
+然而，当 `foo : ${foo}` 和 `foo` 之前的值合并时，这个引用就能解析到之前的值上。合并对象时，覆盖键值对中的引用指向被覆盖的键值对。例如：
 
     foo : { a : 1 }
 
-and then:
+在它之后又有：
 
     foo : ${foo}
 
-Then `${foo}` resolves to `{ a : 1 }`, the value of the overridden
-field.
+此时 `${foo}` 会解析为 `{ a : 1 }`，即被覆盖的键值对的值。
 
-It would be an error if these two fields were reversed, so first:
+如果两者顺序颠倒一下，就会产生错误。比如：
 
     foo : ${foo}
 
-and then second:
+在它之后又有：
 
     foo : { a : 1 }
 
-Here the `${foo}` self-reference comes before `foo` has a value,
-so it is undefined, exactly as if the substitution referenced a
-path not found in the document.
+在这里 `${foo}` 自引用出现在了 `foo` 被赋值之前，所以此时的 `foo` 是没有定义的，无异于引用一个整个文件中没有定义的路径。
 
 Because `foo : ${foo}` conceptually looks to previous definitions
 of `foo` for a value, the error should be treated as "undefined"
