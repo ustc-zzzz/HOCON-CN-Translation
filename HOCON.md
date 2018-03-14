@@ -24,7 +24,7 @@
     - [作为键的路径表达式](#%E4%BD%9C%E4%B8%BA%E9%94%AE%E7%9A%84%E8%B7%AF%E5%BE%84%E8%A1%A8%E8%BE%BE%E5%BC%8F)
     - [引用](#%E5%BC%95%E7%94%A8)
       - [自引用](#%E8%87%AA%E5%BC%95%E7%94%A8)
-      - [键值分隔符 `+=`](#%E9%94%AE%E5%80%BC%E5%88%86%E9%9A%94%E7%AC%A6%20%60%2B%3D%60)
+      - [键值分隔符 `+=`](#%E9%94%AE%E5%80%BC%E5%88%86%E9%9A%94%E7%AC%A6%20%2B%3D)
       - [自引用举例](#%E8%87%AA%E5%BC%95%E7%94%A8%E4%B8%BE%E4%BE%8B)
     - [Includes](#includes)
       - [Include syntax](#include-syntax)
@@ -508,24 +508,16 @@ _自引用键值对_ 指：
 
 在这里 `${foo}` 自引用出现在了 `foo` 被赋值之前，所以此时的 `foo` 是没有定义的，无异于引用一个整个文件中没有定义的路径。
 
-Because `foo : ${foo}` conceptually looks to previous definitions
-of `foo` for a value, the error should be treated as "undefined"
-rather than "intractable cycle"; as a result, the optional
-substitution syntax `${?foo}` does not create a cycle:
+概念上来说，`foo : ${foo}` 是需要查找 `foo` 之前的定义以决定具体的解析结果的，所以它的报错应当是“没有定义”（"undefined"）而非“不可跳出的循环引用“（"intractable cycle"）。也因此，使用可选引用（Optional Substitution）即可避免循环引用的问题：
 
-    foo : ${?foo} // this field just disappears silently
+    foo : ${?foo} // 这个键会静静地消失
 
-If a substitution is hidden by a value that could not be merged
-with it (by a non-object value) then it is never evaluated and no
-error will be reported. So for example:
+如果引用被无法合并的值（非对象的值）隐藏起来了，那么它就不会被解析，也因此不会报错。例如：
 
     foo : ${does-not-exist}
     foo : 42
 
-In this case, no matter what `${does-not-exist}` resolves to, we
-know `foo` is `42`, so `${does-not-exist}` is never evaluated and
-there is no error. The same is true for cycles like `foo : ${foo},
-foo : 42`, where the initial self-reference must simply be ignored.
+在这个情况下，不管 `${does-not-exist}` 解析结果如何，我们都能确定 `foo` 是 `42`，所以 `${does-not-exist}` 不会被解析，也因此不会产生任何错误。对于形如 `foo : ${foo}, foo : 42` 这样的循环引用也是如此——第一个循环引用会被直接忽略。
 
 A self-reference resolves to the value "below" even if it's part
 of a path expression. So for example:
