@@ -23,7 +23,7 @@
     - [路径表达式](#%E8%B7%AF%E5%BE%84%E8%A1%A8%E8%BE%BE%E5%BC%8F)
     - [作为键的路径表达式](#%E4%BD%9C%E4%B8%BA%E9%94%AE%E7%9A%84%E8%B7%AF%E5%BE%84%E8%A1%A8%E8%BE%BE%E5%BC%8F)
     - [引用](#%E5%BC%95%E7%94%A8)
-      - [Self-Referential Substitutions](#self-referential-substitutions)
+      - [自引用](#%E8%87%AA%E5%BC%95%E7%94%A8)
       - [The `+=` field separator](#the--field-separator)
       - [Examples of Self-Referential Substitutions](#examples-of-self-referential-substitutions)
     - [Includes](#includes)
@@ -400,7 +400,7 @@ JSON中被引号括起来的字符串不允许包含控制字符（一些控制�
 
 某个实现可以通过查询系统环境变量或其他外部配置来解析在配置树中没有找到的引用。（关于环境变量的细节将在后文中阐述。）
 
-引用不会尝试解析包含在其中的加引号的字符串。如果你需要在字符串中使用引用，你必须使用值连接把引用和不加引号连接起来：
+引用不会尝试解析包含在其中的加引号的字符串。如果你需要在字符串中使用引用，你必须使用值连结把引用和不加引号的字符串连接起来：
 
     key : ${animal.favorite} is my favorite animal
 
@@ -422,78 +422,51 @@ JSON中被引号括起来的字符串不允许包含控制字符（一些控制�
 
  - 如果这是某个对象里的键值对，此引用不应产生新的键值对。如果此键值对会覆盖之前设定的相同键值对，则保留之前的值。
  - 如果这是某个数组元素，那么此引用不应导致新元素加入数组中。
- - 如果这是值连接的一部分，同时连接的另一部分是字符串，那么这个未定义引用会变成空字符串；如果连接的另一部分是对象或数组，则相应地变为空对象或空数组。
- - 对于 `foo : ${?bar}` 来说，在 `bar` 未定义时，`foo` 这个键不会存在。对于 `foo : ${?bar}${?baz}` 来说，如果 `bar` 和 `baz` *都*\没有定义，那么 `foo` 这个键不会存在。
+ - 如果这是值连结的一部分，同时被值连结的另一个值是字符串，那么这个未定义引用会变成空字符串；如果被值连结的另一个值是对象或数组，则相应地变为空对象或空数组。
+ - 对于 `foo : ${?bar}` 来说，在 `bar` 未定义时，`foo` 这个键不会存在。对于 `foo : ${?bar}${?baz}` 来说，如果 `bar` 和 `baz` _都_ 没有定义，那么 `foo` 这个键不会存在。
 
-引用只能用于键值对的值或数组元素（值连接）中，不能用于键名，亦不能嵌入路径表达式等其他引用中。
+引用只能用于键值对的值或数组元素（值连结）中，不能用于键名，亦不能嵌入路径表达式等其他引用中。
 
-引用会被任意一种值类型（数字、对象、字符串、数组、`true`、`false`、`null`）替换。如果最终值只由引用组成，值类型会保留；否则，会通过值连接组成字符串。
+引用会被任意一种值类型（数字、对象、字符串、数组、`true`、`false`、`null`）替换。如果最终值只由引用组成，值类型会保留；否则，会通过值连结组成字符串。
 
-#### Self-Referential Substitutions
+#### 自引用
 
-The big picture:
+总的来说：
 
- - substitutions normally "look forward" and use the final value
-   for their path expression
- - when this would create a cycle, when possible the cycle must be
-   broken by looking backward only (thus removing one of the
-   substitutions that's a link in the cycle)
+ - 通常情况下，引用将“向前看”，并将其最终值用于其路径表达式
+ - 如果会产生循环，如果可能，循环应通过向后看打破（从而移除了引用循环中的一条引用链）
 
-The idea is to allow a new value for a field to be based on the
-older value:
+通过这种方式我们得以允许基于键值对的旧值设置新值：
 
     path : "a:b:c"
     path : ${path}":d"
 
-A _self-referential field_ is one which:
+_自引用键值对_ 指：
 
- - has a substitution, or value concatenation containing a
-   substitution, as its value
- - where this field value refers to the field being defined,
-   either directly or by referring to one or more other
-   substitutions which eventually point back to the field being
-   defined
+ - 其值或其值连结的一部分包含一个到自身值的引用
+ - 键值对的值引用了一个已有定义的键值对，该键值对中直接或间接包含了一个最终引用回自身值的引用
 
-Examples of self-referential fields:
+自引用键值对的示例：
 
  - `a : ${a}`
  - `a : ${a}bc`
  - `path : ${path} [ /usr/bin ]`
 
-Note that an object or array with a substitution inside it is
-_not_ considered self-referential for this purpose. The
-self-referential rules do _not_ apply to:
+需注意的一点是，如果一个数组或对象中的值含有一个指向自身值的引用，在解析时将 _不_ 考虑自引用键值对的相关规则。也就是说，以下情况相关规则 _不_ 作考虑：
 
  - `a : { b : ${a} }`
  - `a : [${a}]`
 
-These cases are unbreakable cycles that generate an error. (If
-"looking backward" were allowed for these, something like
-`a={ x : 42, y : ${a.x} }` would look backward for a
-nonexistent `a` while resolving `${a.x}`.)
+这种形式的循环应该直接在解析时报错。（假设允许“向前看”的话，一些诸如`a={ x : 42, y : ${a.x} }`的形式会在解析`${a.x}`时试图解析不存在的`a`。）
 
-A possible implementation is:
+可能的实现有：
 
- - substitutions are resolved by looking up paths in a document.
-   Cycles only arise when the lookup document is an ancestor
-   node of the substitution node.
- - while resolving a potentially self-referential field (any
-   substitution or value concatenation that contains a
-   substitution), remove that field and all fields which override
-   it from the lookup document.
+ - 尝试解析引用的行为会试图检索整个文件中对应的路径，如果检索时发现路径对应节点是引用的父节点，那么解析时便会感知到循环。
+ - 尝试解析可能会出现自引用的引用（其值或其值连结的一部分包含一个引用）时，将该键值对以及会对其产生覆盖的所有键值对移除。
 
-The simplest form of this implementation will report a circular
-reference as missing; in `a : ${a}` you would remove `a : ${a}`
-while resolving `${a}`, leaving an empty document to look up
-`${a}` in. You can give a more helpful error message if, rather
-than simply removing the field, you leave a marker value
-describing the cycle. Then generate an error if you return to that
-marker value during resolution.
+最简单的实现形式会在解析时将循环当作不存在的引用处理；比如说在解析`a : ${a}`时，你会首先把`a : ${a}`本身移除然后再解析`${a}`，也就是在一个空文件中检索对应的`${a}`的值。更复杂一点的做法是在被移除的键值对处添加一个标记符，从而在发现循环时产生可读性更高的错误信息。然后，在回到标记符对应的引用本身时报错。
 
-Cycles should be treated the same as a missing value when
-resolving an optional substitution (i.e. the `${?foo}` syntax).
-If `${?foo}` refers to itself then it's as if it referred to a
-nonexistent value.
+对于可选引用（诸如`${?foo}`的形式）来说，对待循环的解析方式应同样按照不存在的值处理。如果`${?foo}`引用了自身，那么解析时就应该当作不存在的值处理。
 
 #### The `+=` field separator
 
