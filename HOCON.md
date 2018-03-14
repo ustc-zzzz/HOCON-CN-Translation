@@ -394,79 +394,40 @@ JSON中被引号括起来的字符串不允许包含控制字符（一些控制�
 
 引用（Substitution）配置文件树中的其他部分是HOCON允许的一种形式。
 
-The syntax is `${pathexpression}` or `${?pathexpression}` where
-the `pathexpression` is a path expression as described above. This
-path expression has the same syntax that you could use for an
-object key.
+引用的语法是这样的：`${pathexpression}` 或 `${?pathexpression}`。其中，`pathexpression` 便是上文中提及的路径表达式。这里用到的路径表达式的语法与用作对象的键的语法是一样的。
 
-The `?` in `${?pathexpression}` must not have whitespace before
-it; the three characters `${?` must be exactly like that, grouped
-together.
+`${?pathexpression}` 中的 `?` 前不能有空格。换言之，使用这种形式的引用时，`${?` 必须原样组合在一起使用。
 
-For substitutions which are not found in the configuration tree,
-implementations may try to resolve them by looking at system
-environment variables or other external sources of configuration.
-(More detail on environment variables in a later section.)
+某个实现可以通过查询系统环境变量或其他外部配置来解析在配置树中没有找到的引用。（关于环境变量的细节将在后文中阐述。）
 
-Substitutions are not parsed inside quoted strings. To get a
-string containing a substitution, you must use value concatenation
-with the substitution in the unquoted portion:
+引用不会尝试解析包含在其中的加引号的字符串。如果你需要在字符串中使用引用，你必须使用值连接把引用和不加引号连接起来：
 
     key : ${animal.favorite} is my favorite animal
 
-Or you could quote the non-substitution portion:
+你也可以用引号把非引用部分括起来：
 
     key : ${animal.favorite}" is my favorite animal"
 
-Substitutions are resolved by looking up the path in the
-configuration. The path begins with the root configuration object,
-i.e. it is "absolute" rather than "relative."
+引用通过查询整个配置来解析。路径从根对象开始解析，换言之路径是绝对路径，而非相对路径。
 
-Substitution processing is performed as the last parsing step, so
-a substitution can look forward in the configuration. If a
-configuration consists of multiple files, it may even end up
-retrieving a value from another file.
+引用处理是解析的最后一步，所以引用也可以向后查询。如果一个配置包含了多个文件，最终引用还可以解析到别的文件上去。
 
-If a key has been specified more than once, the substitution will
-always evaluate to its latest-assigned value (that is, it will
-evaluate to the merged object, or the last non-object value that
-was set, in the entire document being parsed including all
-included files).
+如果一个键出现了多次，引用只会解析到最后一次出现的值（换言之，它会解析到所有包含的文件中该键的最终赋值，或最终合并出来的对象）。
 
-If a configuration sets a value to `null` then it should not be
-looked up in the external source. Unfortunately there is no way to
-"undo" this in a later configuration file; if you have `{ "HOME" :
-null }` in a root object, then `${HOME}` will never look at the
-environment variable. There is no equivalent to JavaScript's
-`delete` operation in other words.
+如果有一个选项设定为 `null`，那么解析它的键时就永远不会从外部来源中解析。不幸的是，这个操作是不可逆的；如果你的根对象中有类似 `{ "Home" : null }` 的东西，那么解析 `${HOME}` 就永远不会解析到系统环境变量上去。换言之，HOCON 中没有等价于 JavaScript 的 `delete` 的操作。
 
-If a substitution does not match any value present in the
-configuration and is not resolved by an external source, then it
-is undefined. An undefined substitution with the `${foo}` syntax
-is invalid and should generate an error.
+若引用无法匹配到任何配置中出现的值，同时也不能通过外部来源解析成任何值，那么这个引用会成为未定义引用。以 `${foo}` 形式出现的未定义引用是非法的，应当按照错误处理。
 
-If a substitution with the `${?foo}` syntax is undefined:
+若形如 `${?foo}` 的引用没有定义：
 
- - if it is the value of an object field then the field should not
-   be created. If the field would have overridden a previously-set
-   value for the same field, then the previous value remains.
- - if it is an array element then the element should not be added.
- - if it is part of a value concatenation with another string then
-   it should become an empty string; if part of a value
-   concatenation with an object or array it should become an empty
-   object or array.
- - `foo : ${?bar}` would avoid creating field `foo` if `bar` is
-   undefined. `foo : ${?bar}${?baz}` would also avoid creating the
-   field if _both_ `bar` and `baz` are undefined.
+ - 如果这是某个对象里的键值对，此引用不应产生新的键值对。如果此键值对会覆盖之前设定的相同键值对，则保留之前的值。
+ - 如果这是某个数组元素，那么此引用不应导致新元素加入数组中。
+ - 如果这是值连接的一部分，同时连接的另一部分是字符串，那么这个未定义引用会变成空字符串；如果连接的另一部分是对象或数组，则相应地变为空对象或空数组。
+ - 对于 `foo : ${?bar}` 来说，在 `bar` 未定义时，`foo` 这个键不会存在。对于 `foo : ${?bar}${?baz}` 来说，如果 `bar` 和 `baz` *都*\没有定义，那么 `foo` 这个键不会存在。
 
-Substitutions are only allowed in field values and array
-elements (value concatenations), they are not allowed in keys or
-nested inside other substitutions (path expressions).
+引用只能用于键值对的值或数组元素（值连接）中，不能用于键名，亦不能嵌入路径表达式等其他引用中。
 
-A substitution is replaced with any value type (number, object,
-string, array, true, false, null). If the substitution is the only
-part of a value, then the type is preserved. Otherwise, it is
-value-concatenated to form a string.
+引用会被任意一种值类型（数字、对象、字符串、数组、`true`、`false`、`null`）替换。如果最终值只由引用组成，值类型会保留；否则，会通过值连接组成字符串。
 
 #### Self-Referential Substitutions
 
