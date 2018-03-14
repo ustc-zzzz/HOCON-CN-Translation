@@ -24,7 +24,7 @@
     - [作为键的路径表达式](#%E4%BD%9C%E4%B8%BA%E9%94%AE%E7%9A%84%E8%B7%AF%E5%BE%84%E8%A1%A8%E8%BE%BE%E5%BC%8F)
     - [引用](#%E5%BC%95%E7%94%A8)
       - [自引用](#%E8%87%AA%E5%BC%95%E7%94%A8)
-      - [The `+=` field separator](#the--field-separator)
+      - [键值分隔符 `+=`](%E9%94%AE%E5%80%BC%E5%88%86%E9%9A%94%E7%AC%A6%20%60%2B%3D%60)
       - [Examples of Self-Referential Substitutions](#examples-of-self-referential-substitutions)
     - [Includes](#includes)
       - [Include syntax](#include-syntax)
@@ -468,27 +468,19 @@ _自引用键值对_ 指：
 
 对于可选引用（诸如`${?foo}`的形式）来说，对待循环的解析方式应同样按照不存在的值处理。如果`${?foo}`引用了自身，那么解析时就应该当作不存在的值处理。
 
-#### The `+=` field separator
+#### 键值分隔符 `+=`
 
-Fields may have `+=` as a separator rather than `:` or `=`. A
-field with `+=` transforms into a self-referential array
-concatenation, like this:
+除了 `:` 和 `=`，键与值之间还可以用 `+=` 分割。使用 `+=` 分隔的键值对会令值变为自引用数组，例如：
 
     a += b
 
-becomes:
+会变成：
 
     a = ${?a} [b]
 
-`+=` appends an element to a previous array. If the previous value
-was not an array, an error will result just as it would in the
-long form `a = ${?a} [b]`. Note that the previous value is
-optional (`${?a}` not `${a}`), which allows `a += b` to be the
-first mention of `a` in the file (it is not necessary to have `a =
-[]` first).
+`+=` 起到了在数组结尾追加元素的作用。如果 `a` 之前的值不是数组，它会产生和 `a = ${?a} [b]` 一样的报错。注意，`a` 的值不一定必须存在（`${?a}` 而非 `${a}`），换言之 `a += b` 这样的声明可以是全文件中第一次出现 `a` 的地方（即不需要 `a = []` 这样的显式声明）。
 
-Note: Akka 2.0 (and thus Play 2.0) contains an embedded
-implementation of the config lib which does not support `+=`.
+注意：Akka 2.0（因此也包括 Play 2.0）内嵌的 Config lib 的实现中不支持 `+=`。
 
 #### Examples of Self-Referential Substitutions
 
