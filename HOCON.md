@@ -29,10 +29,10 @@
     - [跨文件引用](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8)
       - [跨文件引用语法](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E6%B3%95)
       - [跨文件引用语义：合并](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E4%B9%89%E5%90%88%E5%B9%B6)
-      - [Include semantics: substitution](#include-semantics-substitution)
-      - [Include semantics: missing files and required files](#include-semantics-missing-files-and-required-files)
-      - [Include semantics: file formats and extensions](#include-semantics-file-formats-and-extensions)
-      - [Include semantics: locating resources](#include-semantics-locating-resources)
+      - [跨文件引用语义：引用](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E4%B9%89%E5%BC%95%E7%94%A8)
+      - [跨文件引用语义：不存在的文件和强制要求的文件](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E4%B9%89%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E6%96%87%E4%BB%B6%E5%92%8C%E5%BC%BA%E5%88%B6%E8%A6%81%E6%B1%82%E7%9A%84%E6%96%87%E4%BB%B6)
+      - [跨文件引用语义：文件类型及格式](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E4%B9%89%E6%96%87%E4%BB%B6%E7%B1%BB%E5%9E%8B%E5%8F%8A%E6%A0%BC%E5%BC%8F)
+      - [跨文件引用语义：资源定位](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E4%B9%89%E8%B5%84%E6%BA%90%E5%AE%9A%E4%BD%8D)
     - [Conversion of numerically-indexed objects to arrays](#conversion-of-numerically-indexed-objects-to-arrays)
   - [MIME类型](#mime%E7%B1%BB%E5%9E%8B)
   - [对于API的建议](#%E5%AF%B9%E4%BA%8Eapi%E7%9A%84%E5%BB%BA%E8%AE%AE)
@@ -642,181 +642,105 @@ _跨文件引用声明_ 由未加括号的`include`和随后的空白符及之�
  - 在跨文件引用声明前出现的键值对将被覆盖或者合并，其行为和一个文件中同时出现两个相同键值对的行为等同。
  - 在跨文件引用声明后重复出现的键值对，将会覆盖或者合并被引用文件中的键值对。
 
-#### Include semantics: substitution
+#### 跨文件引用语义：引用
 
-Substitutions in included files are looked up at two different
-paths; first, relative to the root of the included file; second,
-relative to the root of the including configuration.
+被引用文件中的引用会使用两种策略在文件中检索；首先会检索被引用文件本身的根节点；然后再检索文件引用者的根节点。
 
-Recall that substitution happens as a final step, _after_
-parsing. It should be done for the entire app's configuration, not
-for single files in isolation.
+再次强调一点，引用的解析发生在语法分析 _后_ ，解析的最后阶段。对于引用的解析应该针对所有文件，而不应将文件隔离开来。
 
-Therefore, if an included file contains substitutions, they must
-be "fixed up" to be relative to the app's configuration root.
+因此，一个包含有引用的被引用文件在解析时必须将相对于被引用文件本身的引用路径“调整”成文件引用者决定的根节点的相对路径。
 
-Say for example that the root configuration is this:
+我们选取这样一个文件引用者作为示例：
 
     { a : { include "foo.conf" } }
 
-And "foo.conf" might look like this:
+然后“foo.conf”看起来是这样的：
 
     { x : 10, y : ${x} }
 
-If you parsed "foo.conf" in isolation, then `${x}` would evaluate
-to 10, the value at the path `x`. If you include "foo.conf" in an
-object at key `a`, however, then it must be fixed up to be
-`${a.x}` rather than `${x}`.
+如果你对“foo.conf”单独解析的话，那么`${x}`的值将被解析成`x`路径对应的10。如果你在一个对象中，键为`a`的地方引用了“foo.conf”，那么相应的路径应该被调整成`${a.x}`而不是`${x}`。
 
-Say that the root configuration redefines `a.x`, like this:
+如果文件引用者重新定义了`a.x`，如下所示：
 
     {
         a : { include "foo.conf" }
         a : { x : 42 }
     }
 
-Then the `${x}` in "foo.conf", which has been fixed up to
-`${a.x}`, would evaluate to `42` rather than to `10`.
-Substitution happens _after_ parsing the whole configuration.
+那么“foo.conf”中被调整成`${a.x}`的`${x}`，在解析时将会检索到`42`而不是`10`这一数值。因为引用的解析位于语法分析 _后_ 。
 
-However, there are plenty of cases where the included file might
-intend to refer to the application's root config. For example, to
-get a value from a system property or from the reference
-configuration. So it's not enough to only look up the "fixed up"
-path, it's necessary to look up the original path as well.
+不过，被引用文件本身可能会大量出现引用文件以外的值的情况。比如说引用一个系统环境变量的值，或者说某些文件中的对应值。因此单单解析被调整后的路径不总是够用的，你还需要解析原本的路径。
 
-#### Include semantics: missing files and required files
+#### 跨文件引用语义：不存在的文件和强制要求的文件
 
-By default, if an included file does not exist then the include statement should
-be silently ignored (as if the included file contained only an
-empty object).
+默认情况下，如果文件引用者试图引用一个不存在的文件，那么该引用本身应该被静默忽略（就像被引用文件本身代表一个空的对象一样）。
 
-If however an included resource is mandatory then the name of the
-included resource may be wrapped with `required()`, in which case
-file parsing will fail with an error if the resource cannot be resolved.
+但如果被引用文件本身被强制要求存在，同时跨文件引用声明使用了`required()`，那么在解析不存在的被引用文件时应该报错。
 
-The syntax for this is
+合法的声明格式包括
 
     include required("foo.conf")
     include required(file("foo.conf"))
     include required(classpath("foo.conf"))
     include required(url("http://localhost/foo.conf"))
 
+等。其他类型的IO错误在解析时按理说也不应忽略，不过相应的实现需要在这方面权衡，也就是说在解析时决定将其作为一个可忽略的文件处理，还是决定提醒用户报错。
 
-Other IO errors probably should not be ignored but implementations
-will have to make a judgment which IO errors reflect an ignorable
-missing file, and which reflect a problem to bring to the user's
-attention.
+#### 跨文件引用语义：文件类型及格式
 
-#### Include semantics: file formats and extensions
+HOCON的相应实现可能会支持引用其他类型的文件。支持的其他类型必须和JSON类型系统兼容，或者说能够提供到JSON类型系统的映射。
 
-Implementations may support including files in other formats.
-Those formats must be compatible with the JSON type system, or
-have some documented mapping to JSON's type system.
-
-If an implementation supports multiple formats, then the extension
-may be omitted from the name of included files:
+若相应实现支持多类型文件的跨文件引用，跨文件引用声明中的文件后缀名有可能会被省略：
 
     include "foo"
 
-If a filename has no extension, the implementation should treat it
-as a basename and try loading the file with all known extensions.
+如果未加后缀名，那么解析时应将其当作文件名的前缀对待，并试图添加所有的已知后缀然后试图加载文件。
 
-If the file exists with multiple extensions, they should _all_ be
-loaded and merged together.
+如果满足条件的文件存在有多个，那么它们应该被 _全部_ 加载，然后合并到一起。
 
-Files in HOCON format should be parsed last. Files in JSON format
-should be parsed next-to-last.
+HOCON格式的文件总是应该被最后解析。JSON格式的文件应该作为倒数第二个文件解析。
 
-In short, `include "foo"` might be equivalent to:
+换言之，`include "foo"`可能和：
 
     include "foo.properties"
     include "foo.json"
     include "foo.conf"
 
-This same extension-based behavior is applied to classpath
-resources and files.
+等价。对于以classpath为来源的资源，基于文件后缀名的相应规则同样适用。
 
-For URLs, a basename without extension is not allowed; only the
-exact URL specified is used. The format will be chosen based on
-the Content-Type if available, or by the extension of the path
-component of the URL if no Content-Type is set. This is true even
-for file: URLs.
+对于URL来说，跨文件引用声明中不允许不含有文件后缀名；你只能使用整个未加删减的URL。相应的解析方式可能由返回数据的Content-Type决定，或者当Content-Type不存在时使用文件后缀名决定。file:格式的URL同样要求如此。
 
-#### Include semantics: locating resources
+#### 跨文件引用语义：资源定位
 
-A quoted string not surrounded by `url()`, `file()`, `classpath()`
-must be interpreted heuristically. The heuristic is to treat the
-quoted string as:
+启发式的检索将会在声明中未出现`url()`、`file()`、或`classpath()`时进行。启发式的检索策略如下：
 
- - a URL, if the quoted string is a valid URL with a known
-   protocol.
- - otherwise, a file or other resource "adjacent to" the one being
-   parsed and of the same type as the one being parsed. The meaning
-   of "adjacent to", and the string itself, has to be specified
-   separately for each kind of resource.
- - On the Java Virtual Machine, if an include statement does not
-   identify a valid URL or an existing resource "adjacent to" the
-   including resource, implementations may wish to fall back to a
-   classpath resource.  This allows configurations found in files
-   or URLs to access classpath resources in a natural way.
+ - 如果相应字符串是一个已知协议的合法URL，则按URL处理。
+ - 否则，按“与之相邻”的相同类型文件或者其他资源处理。“与之相邻”以及该字符串本身的含义，不同类型的资源有着不同的定义。
+ - 如果你使用JVM，同时跨文件引用声明的被引用文件本身不能通过合法的URL或者“与之相邻”的资源等方式解析，相应实现可能会当作来自classpath的资源处理。这允许以文件或URL等形式的配置文件能够自然地访问classpath资源。
 
-Implementations may vary in the kinds of resources they can
-include.
+不同的具体实现对于能够引用的不同类型资源的定义可能大相径庭。
 
-For resources located on the Java classpath:
+对于Java语言的classpath来说：
 
- - included resources are looked up by calling `getResource()` on
-   the same class loader used to look up the including resource.
- - if the included resource name is absolute (starts with '/')
-   then it should be passed to `getResource()` with the '/'
-   removed.
- - if the included resource name does not start with '/' then it
-   should have the "directory" of the including resource
-   prepended to it, before passing it to `getResource()`.  If the
-   including resource is not absolute (no '/') and has no "parent
-   directory" (is just a single path element), then the included
-   relative resource name should be left as-is.
- - it would be wrong to use `getResource()` to get a URL and then
-   locate the included name relative to that URL, because a class
-   loader is not required to have a one-to-one mapping between
-   paths in its URLs and the paths it handles in `getResource()`.
-   In other words, the "adjacent to" computation should be done
-   on the resource name not on the resource's URL.
+ - 首先通过调用同一个类加载器（class loader）对应的`getResource()`方法检索被引用资源。
+ - 如果使用的是绝对路径（以'/'开头），那么调用`getResource()`方法时应首先把开头的'/'去掉。
+ - 如果使用的路径不以'/'开头，那么在调用`getResource()`方法前，应补上文件引用者本身所在“目录”作为前缀。如果使用的路径不是绝对路径（不以'/'开头）的同时，还没有对应“目录”（只有文件名）的话，那么直接按原样传入对应路径就行了。
+ - 你不应该使用`getResource()`方法获取一个URL然后基于该URL和对应路径检索资源，因为类加载器的`getResource()`方法处理的路径和对应URL路径之间不总存在一一映射。换言之，对于“与之相邻”的计算来说，你应该基于资源名称而不是资源URL检索资源。
 
-For plain files on the filesystem:
+对于文件系统中的文件来说：
 
- - if the included file is an absolute path then it should be kept
-   absolute and loaded as such.
- - if the included file is a relative path, then it should be
-   located relative to the directory containing the including
-   file.  The current working directory of the process parsing a
-   file must NOT be used when interpreting included paths.
- - if the file is not found, fall back to the classpath resource.
-   The classpath resource should not have any package name added
-   in front, it should be relative to the "root"; which means any
-   leading "/" should just be removed (absolute is the same as
-   relative since it's root-relative). The "/" is handled for
-   consistency with including resources from inside other
-   classpath resources, where the resource name may not be
-   root-relative and "/" allows specifying relative to root.
+ - 如果使用的是绝对路径，那就按原样加载。
+ - 如果使用的是相对路径，那么检索时应相对文件引用者所在目录检索资源。进程所使用的工作目录永远永远不应该在检索相对路径时使用。
+ - 如果文件没找到，那就回退到classpath中的资源。classpath中的资源不应在检索时添加包名作为前缀，而应与某个“根目录”相对；换言之，开头的"/"应被去掉（在这种情况下，绝对路径和相对路径是一样的）。"/"存在的意义为保持一致性，因为来自classpath中的其他资源不总是相对“根目录”的绝对路径，而"/"总是代表绝对路径的。
 
-URLs:
+对于URL来说：
 
- - for files loaded from a URL, "adjacent to" should be based
-   on parsing the URL's path component, replacing the last
-   path element with the included name.
- - file: URLs should behave in exactly the same way as a plain
-   filename
+ - 对于从URL中加载的资源，“与之相邻”指基于URL本身路径的检索策略，而URL路径的最后一节将被替换成被引用文件名。
+ - file:格式的URL的检索策略应和普通文件名的检索策略完全一样
 
-Implementations need not support files, Java resources, or URLs;
-and they need not support particular URL protocols. However, if
-they do support them they should do so as described above.
+特定实现不必总是支持文件，Java语言的classpath资源，以及URL；同时特定实现也不必一定支持某个特定的协议。不过如果支持的话，相应的检索策略应该和上面描述的相同。
 
-Note that at present, if `url()`/`file()`/`classpath()` are
-specified, the included items are NOT interpreted relative to the
-including items. Relative-to-including-file paths only work with
-the heuristic `include "foo.conf"`. This may change in the future.
+需要注意的一点是，如果指定了`url()`/`file()`/`classpath()`，被引用的节点将不会相对于引用者解析。这种解析方式只用于启发式的解析，也就是针对`include "foo.conf"`等声明格式的解析。该条规定可能会在未来发生变化。
 
 ### Conversion of numerically-indexed objects to arrays
 
