@@ -44,9 +44,9 @@
     - [Config object merging and file merging](#config-object-merging-and-file-merging)
     - [Java properties mapping](#java-properties-mapping)
     - [Conventional configuration files for JVM apps](#conventional-configuration-files-for-jvm-apps)
-    - [Conventional override by system properties](#conventional-override-by-system-properties)
     - [常规的系统属性覆盖](#%E5%B8%B8%E8%A7%84%E7%9A%84%E7%B3%BB%E7%BB%9F%E5%B1%9E%E6%80%A7%E8%A6%86%E7%9B%96)
-    - [连字符？小写驼峰？](#%E8%BF%9E%E5%AD%97%E7%AC%A6%E8%BF%98%E6%98%AF%E5%B0%8F%E5%86%99%E9%A9%BC%E5%B3%B0)
+    - [环境变量用作引用解析的备选项](#%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E7%94%A8%E4%BD%9C%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90%E7%9A%84%E5%A4%87%E9%80%89%E9%A1%B9)
+    - [连字符还是小写驼峰？](#%E8%BF%9E%E5%AD%97%E7%AC%A6%E8%BF%98%E6%98%AF%E5%B0%8F%E5%86%99%E9%A9%BC%E5%B3%B0)
   - [Note on Java properties similarity](#note-on-java-properties-similarity)
   - [Note on Windows and case sensitivity of environment variables](#note-on-windows-and-case-sensitivity-of-environment-variables)
 
@@ -1165,38 +1165,22 @@ its substitutions.
 
 对于一个应用的配置来说，Java 的系统属性 _应覆盖_ 配置文件中的定义。如此做即可支持通过命令行指定配置选项。
 
-### Substitution fallback to environment variables
+### 环境变量用作引用解析的备选项
 
-Recall that if a substitution is not present (not even set to
-`null`) within a configuration tree, implementations may search
-for it from external sources. One such source could be environment
-variables.
+回想这样的情况：某个引用无法在其配置树中解析为任何值（甚至不是 `null`），HOCON 的实现可以根据外部来源进行解析。其中，环境变量就可以是一种外部来源。
 
-It's recommended that HOCON keys always use lowercase, because
-environment variables generally are capitalized. This avoids
-naming collisions between environment variables and configuration
-properties. (While on Windows getenv() is generally not
-case-sensitive, the lookup will be case sensitive all the way
-until the env variable fallback lookup is reached).
+我们推荐 HOCON 中所有的键都使用小写字母，因为环境变量通常都是全大写字母命名的，这样可以避免冲突。（尽管 Windows 下的 getenv() 通常忽略大小写，但在开始查找环境变量之前 HOCON 都是大小写敏感的。）
 
-See also the notes below on Windows and case sensitivity.
+同时请留意下文中对 Windows 平台及大小写问题的备注。
 
-An application can explicitly block looking up a substitution in
-the environment by setting a value in the configuration, with the
-same name as the environment variable. You could set `HOME : null`
-in your root object to avoid expanding `${HOME}` from the
-environment, for example.
+应用程序可以通过设定用同名键值对的方式，显式阻止引用查询环境变量。举例，在根对象中设置 `HOME : null` 这样的键值对可以防止 `${HOME}` 解析到环境变量上去。
 
-Environment variables are interpreted as follows:
+环境变量的解析过程如下：
 
- - env variables set to the empty string are kept as such (set to
-   empty string, rather than undefined)
- - System.getenv throws SecurityException: treated as not present
- - encoding is handled by Java (System.getenv already returns
-   a Unicode string)
- - environment variables always become a string value, though
-   if an app asks for another type automatic type conversion
-   would kick in
+ - 环境变量的值若为空字符串，则保留空字符串，不视作未定义
+ - System.getenv 若抛出 SecurityException，则视作不存在此键
+ - 编码由 Java 处理（System.getenv 本身返回值已经是 Unicode 字符串）
+ - 环境变量的值总是字符串，但应用程序可以要求自动类型转换。
 
 ### 连字符还是小写驼峰？
 
