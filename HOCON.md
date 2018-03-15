@@ -46,7 +46,7 @@
     - [Conventional configuration files for JVM apps](#conventional-configuration-files-for-jvm-apps)
     - [Conventional override by system properties](#conventional-override-by-system-properties)
     - [Substitution fallback to environment variables](#substitution-fallback-to-environment-variables)
-    - [hyphen-separated vs. camelCase](#hyphen-separated-vs-camelcase)
+    - [连字符还是小写驼峰？](#%E8%BF%9E%E5%AD%97%E7%AC%A6%E8%BF%98%E6%98%AF%E5%B0%8F%E5%86%99%E9%A9%BC%E5%B3%B0%EF%BC%9F)
   - [Note on Java properties similarity](#note-on-java-properties-similarity)
   - [Note on Windows and case sensitivity of environment variables](#note-on-windows-and-case-sensitivity-of-environment-variables)
 
@@ -1200,10 +1200,9 @@ Environment variables are interpreted as follows:
    if an app asks for another type automatic type conversion
    would kick in
 
-### hyphen-separated vs. camelCase
+### 连字符还是小写驼峰？
 
-Config keys are encouraged to be `hyphen-separated` rather than
-`camelCase`.
+推荐使用 `hyphen-separated`，而非 `camelCase`，作为键名的命名规范。
 
 ## Note on Java properties similarity
 
