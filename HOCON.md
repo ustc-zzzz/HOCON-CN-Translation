@@ -519,45 +519,32 @@ _自引用键值对_ 指：
 
 在这个情况下，不管 `${does-not-exist}` 解析结果如何，我们都能确定 `foo` 是 `42`，所以 `${does-not-exist}` 不会被解析，也因此不会产生任何错误。对于形如 `foo : ${foo}, foo : 42` 这样的循环引用也是如此——第一个循环引用会被直接忽略。
 
-A self-reference resolves to the value "below" even if it's part
-of a path expression. So for example:
+即便是出现在路径表达式中的自引用，它也会解析到“下一层”的值上去。举例说明：
 
     foo : { a : { c : 1 } }
     foo : ${foo.a}
     foo : { a : 2 }
 
-Here, `${foo.a}` would refer to `{ c : 1 }` rather than `2` and so
-the final merge would be `{ a : 2, c : 1 }`.
+在这里，`${foo.a}` 会指向 `{ c : 1 }` 这个对象，而非 `2` 这个数字，所以最终 `foo` 的值会是合并之后的 `{ a : 2, c : 1 }`。
 
-Recall that for a field to be self-referential, it must have a
-substitution or value concatenation as its value. If a field has
-an object or array value, for example, then it is not
-self-referential even if there is a reference to the field itself
-inside that object or array.
+回想一下，自引用键值对必须使用引用或值连结来确定最终值。举个例子，如果键值对的值是对象或数组，那么即使在这个对象或数组中有对这个键值对的引用，它也不会算作自引用。
 
-Implementations must be careful to allow objects to refer to paths
-within themselves, for example:
+HOCON 的实现必须小心对待在对象中引用自己的路径的情况，举例：
 
     bar : { foo : 42,
             baz : ${bar.foo}
           }
 
-Here, if an implementation resolved all substitutions in `bar` as
-part of resolving the substitution `${bar.foo}`, there would be a
-cycle. The implementation must only resolve the `foo` field in
-`bar`, rather than recursing the entire `bar` object.
+在种情况下，如果某个实现选项将解析整个 `bar` 对象的过程作为解析引用 `${bar.foo}` 过程的一部分，那么就会产生循环引用。这种情况下，HOCON 的实现应当只尝试解析 `bar` 对象 `foo` 中的 `foo`，而非整个 `bar` 对象。
 
-Because there is no inherent cycle here, the substitution must
-"look forward" (including looking at the field currently being
-defined). To make this clearer, `bar.baz` would be `43` in:
+因为没有循环继承，引用有必要“向前解析”（包括查找正在定义中的键值对）以确定解析结果。举例说明：下面的 HOCON 中，`bar.baz` 最终会解析成 `43`。
 
     bar : { foo : 42,
             baz : ${bar.foo}
           }
     bar : { foo : 43 }
 
-Mutually-referring objects should also work, and are not
-self-referential (so they look forward):
+相互引用的对象也是成立的，同时也不会认为是自引用（因为也会“向前解析”）：
 
     // bar.a should end up as 4
     bar : { a : ${foo.d}, b : 1 }
@@ -566,60 +553,38 @@ self-referential (so they look forward):
     foo : { c : ${bar.b}, d : 2 }
     foo.d = 4
 
-Another tricky case is an optional self-reference in a value
-concatenation, in this example `a` should be `foo` not `foofoo`
-because the self reference has to "look back" to an undefined `a`:
+另一种极端情况是值连结中的可选自引用，下面的 HOCON 中 `a` 首先会被解析为 `foo` 而非 `foofoo`，因为自引用会“向后解析”并成功解析没有定义的 `a`：
 
     a = ${?a}foo
 
-In general, in resolving a substitution the implementation must:
+总体上来说，解析引用的实现应当：
 
- - lazy-evaluate the substitution target so there's no
-   "circularity by side effect"
- - "look forward" and use the final value for the path
-   specified in the substitution
- - if a cycle results, the implementation must "look back"
-   in the merge stack to try to resolve the cycle
- - if neither lazy evaluation nor "looking only backward" resolves
-   a cycle, the substitution is missing which is an error unless
-   the `${?foo}` optional-substitution syntax was used.
+ - 对引用目标惰性求值，避免“循环引用引发的副作用”
+ - “向前解析”，并以路径解析出的最终值作为引用的值
+ - 出现循环时，应“向后解析”，通过合并等方式解决循环
+ - 若惰性求值和“向后解析”均无法跳出循环，引用应视为未定义并产生错误，除非使用可选引用 `${?foo}` 的语法。
 
-For example, this is not possible to resolve:
+举例，下列 HOCON 无法解析：
 
     bar : ${foo}
     foo : ${bar}
 
-A multi-step loop like this should also be detected as invalid:
+像是这样由多个键值对组成的循环也应能识别为非法 HOCON：
 
     a : ${b}
     b : ${c}
     c : ${a}
 
-Some cases have undefined behavior because the behavior depends on
-the order in which two fields are resolved, and that order is not
-defined. For example:
+在某些情况下，解析结果依赖于解析顺序，但具体解析顺序没有定义时，就会产生未定义行为。例如：
 
     a : 1
     b : 2
     a : ${b}
     b : ${a}
 
-Implementations are allowed to handle this by setting both `a` and
-`b` to 1, setting both to `2`, or generating an error. Ideally
-this situation would generate an error, but that may be difficult
-to implement. Making the behavior defined would require always
-working with ordered maps rather than unordered maps, which is too
-constraining. Implementations only have to track order for
-duplicate instances of the same field (i.e. merges).
+HOCON 的实现可以在“`a` 和 `b` 都解析为 1”、“都解析为 2”或者产生错误三种行为之间选择。理论上，这种情况应当产生错误，但这种行为可能会很难实现。令这种行为有确定结果一定需要有序表而非无序表的支撑，这也会制造一些限制。理论上，HOCON 的实现只需要追踪相同键值对的重复实例（即合并）。
 
-Implementations must set both `a` and `b` to the same value in
-this case, however. In practice this means that all substitutions
-must be memoized (resolved once, with the result
-retained). Memoization should be keyed by the substitution
-"instance" (the specific occurrence of the `${}` expression)
-rather than by the path inside the `${}` expression, because
-substitutions may be resolved differently depending on their
-position in the file.
+然而，HOCON 的实现必须选择将 `a` 和 `b` 解析为相同的值。在实践中，这意味着所有的引用都必须存储起来（只解析一次，保存解析结果）。存储解析的方式应当以引用它本身为键，而非 `${}` 表达式中的路径，因为根据其所在文件中的位置不同，稍后的解析结果可能会有所差异。
 
 ### 跨文件引用
 
