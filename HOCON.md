@@ -45,8 +45,8 @@
     - [Java properties mapping](#java-properties-mapping)
     - [Conventional configuration files for JVM apps](#conventional-configuration-files-for-jvm-apps)
     - [Conventional override by system properties](#conventional-override-by-system-properties)
-    - [Substitution fallback to environment variables](#substitution-fallback-to-environment-variables)
-    - [连字符还是小写驼峰？](#%E8%BF%9E%E5%AD%97%E7%AC%A6%E8%BF%98%E6%98%AF%E5%B0%8F%E5%86%99%E9%A9%BC%E5%B3%B0%EF%BC%9F)
+    - [常规的系统属性覆盖](#%E5%B8%B8%E8%A7%84%E7%9A%84%E7%B3%BB%E7%BB%9F%E5%B1%9E%E6%80%A7%E8%A6%86%E7%9B%96)
+    - [连字符？小写驼峰？](#%E8%BF%9E%E5%AD%97%E7%AC%A6%E8%BF%98%E6%98%AF%E5%B0%8F%E5%86%99%E9%A9%BC%E5%B3%B0)
   - [Note on Java properties similarity](#note-on-java-properties-similarity)
   - [Note on Windows and case sensitivity of environment variables](#note-on-windows-and-case-sensitivity-of-environment-variables)
 
@@ -1161,11 +1161,9 @@ config added as a fallback, and have substitutions resolved. This
 means the application config can refer to the reference config in
 its substitutions.
 
-### Conventional override by system properties
+### 常规的系统属性覆盖
 
-For an application's config, Java system properties _override_
-settings found in the configuration file. This supports specifying
-config options on the command line.
+对于一个应用的配置来说，Java 的系统属性 _应覆盖_ 配置文件中的定义。如此做即可支持通过命令行指定配置选项。
 
 ### Substitution fallback to environment variables
 
