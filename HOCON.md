@@ -33,7 +33,7 @@
       - [跨文件引用语义：不存在的文件和强制要求的文件](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E4%B9%89%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E6%96%87%E4%BB%B6%E5%92%8C%E5%BC%BA%E5%88%B6%E8%A6%81%E6%B1%82%E7%9A%84%E6%96%87%E4%BB%B6)
       - [跨文件引用语义：文件类型及格式](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E4%B9%89%E6%96%87%E4%BB%B6%E7%B1%BB%E5%9E%8B%E5%8F%8A%E6%A0%BC%E5%BC%8F)
       - [跨文件引用语义：资源定位](#%E8%B7%A8%E6%96%87%E4%BB%B6%E5%BC%95%E7%94%A8%E8%AF%AD%E4%B9%89%E8%B5%84%E6%BA%90%E5%AE%9A%E4%BD%8D)
-    - [Conversion of numerically-indexed objects to arrays](#conversion-of-numerically-indexed-objects-to-arrays)
+    - [数字索引对象到数组的转换](#%E6%95%B0%E5%AD%97%E7%B4%A2%E5%BC%95%E5%AF%B9%E8%B1%A1%E5%88%B0%E6%95%B0%E7%BB%84%E7%9A%84%E8%BD%AC%E6%8D%A2)
   - [MIME类型](#mime%E7%B1%BB%E5%9E%8B)
   - [对于API的建议](#%E5%AF%B9%E4%BA%8Eapi%E7%9A%84%E5%BB%BA%E8%AE%AE)
     - [Automatic type conversions](#automatic-type-conversions)
@@ -742,42 +742,29 @@ HOCON格式的文件总是应该被最后解析。JSON格式的文件应该作�
 
 需要注意的一点是，如果指定了`url()`/`file()`/`classpath()`，被引用的节点将不会相对于引用者解析。这种解析方式只用于启发式的解析，也就是针对`include "foo.conf"`等声明格式的解析。该条规定可能会在未来发生变化。
 
-### Conversion of numerically-indexed objects to arrays
+### 数字索引对象到数组的转换
 
-In some file formats and contexts, such as Java properties files,
-there isn't a good way to define arrays. To provide some mechanism
-for this, implementations should support converting objects with
-numeric keys into arrays. For example, this object:
+在某些文件格式或者上下文，比如说Java的properties文件格式等情况下，定义数组比较困难。考虑到这种情况，HOCON的相应实现应支持将数字格式键的对象转换到数组。比如说下面这个对象：
 
     { "0" : "a", "1" : "b" }
 
-could be treated as:
+可以被当作下面这种形式处理：
 
     [ "a", "b" ]
 
-This allows creating an array in a properties file like this:
+一些诸如properties等格式的文件就可以使用这种方式定义一个数组：
 
     foo.0 = "a"
     foo.1 = "b"
 
-The details:
+相关细节：
 
- - the conversion should be done lazily when required to avoid
-   a type error, NOT eagerly anytime an object has numeric
-   keys.
- - the conversion should be done when you would do an automatic
-   type conversion (see the section "Automatic type conversions"
-   below).
- - the conversion should be done in a concatenation when a list
-   is expected and an object with numeric keys is found.
- - the conversion should not occur if the object is empty or
-   has no keys which parse as positive integers.
- - the conversion should ignore any keys which do not parse
-   as positive integers.
- - the conversion should sort by the integer value of each
-   key and then build the array; if the integer keys are "0" and
-   "2" then the resulting array would have indices "0" and "1",
-   i.e. missing indices in the object are eliminated.
+ - 这种转换应该是惰性的，也就是说只有在可能出错的情况下进行转换，而不是在满足条件的时候就尝试转换。
+ - 这种转换只应该在自动类型转换（automatic type conversion）出现时进行（请参阅后续章节）。
+ - 这种转换应该在一个数组和一个满足条件的对象进行值连结时进行。
+ - 这种转换不应该在对象为空或者对象没有数字索引的键值对存在时进行。
+ - 这种转换应该忽略所有含有不能解析成自然数的键的键值对。
+ - 这种转换应该按照数字索引排序然后再生成数组；如果有两个分别为"0"和"2"的键，那么其两个值应该分别对应生成的数组的"0"和"1"两个索引对应的值，换言之，不存在的数字索引应被直接跳过。
 
 ## MIME类型
 
