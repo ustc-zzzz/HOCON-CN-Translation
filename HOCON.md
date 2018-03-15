@@ -36,7 +36,7 @@
     - [数字索引对象到数组的转换](#%E6%95%B0%E5%AD%97%E7%B4%A2%E5%BC%95%E5%AF%B9%E8%B1%A1%E5%88%B0%E6%95%B0%E7%BB%84%E7%9A%84%E8%BD%AC%E6%8D%A2)
   - [MIME类型](#mime%E7%B1%BB%E5%9E%8B)
   - [对于API的建议](#%E5%AF%B9%E4%BA%8Eapi%E7%9A%84%E5%BB%BA%E8%AE%AE)
-    - [Automatic type conversions](#automatic-type-conversions)
+    - [自动类型转换](#%E8%87%AA%E5%8A%A8%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2)
     - [Units format](#units-format)
     - [Duration format](#duration-format)
     - [Period Format](#period-format)
@@ -774,39 +774,26 @@ HOCON格式的文件总是应该被最后解析。JSON格式的文件应该作�
 
 完美的HOCON格式实现应遵守下面这些约定，并以可预测的方式正常工作。
 
-### Automatic type conversions
+### 自动类型转换
 
-If an application asks for a value with a particular type, the
-implementation should attempt to convert types as follows:
+如果解析时需要用到一个特定类型的值，那么相应实现应该按照以下规则转换类型：
 
- - number to string: convert the number into a string
-   representation that would be a valid number in JSON.
- - boolean to string: should become the string "true" or "false"
- - string to number: parse the number with the JSON rules
- - string to boolean: the strings "true", "yes", "on", "false",
-   "no", "off" should be converted to boolean values. It's
-   tempting to support a long list of other ways to write a
-   boolean, but for interoperability and keeping it simple, it's
-   recommended to stick to these six.
- - string to null: the string `"null"` should be converted to a
-   null value if the application specifically asks for a null
-   value, though there's probably no reason an app would do this.
- - numerically-indexed object to array: see the section
-   "Conversion of numerically-indexed objects to arrays" above
+ - 数值到字符串值：把JSON中合法的数值转换成字符串。
+ - 布尔值到字符串值：把值转换成"true"或者"false"
+ - 字符串值到数值：把字符串按照JSON的规则转换到数值
+ - 字符串值到布尔值："true"、"yes"、"on"、"false"、"no"、"off"等六个值应该被转换成布尔值。支持一长串允许转换到布尔值的字符串听起来很吸引人，但为保证互用性以及简化相关概念，我们建议相关实现只支持这六个值。
+ - 字符串值到空值：只有解析时明确表明需要一个空值时，`"null"`这一字符串才应该被转换成空值，虽然听起来没人会这么要求。
+ - 数字索引对象到数组：请参见上面的章节
 
-The following type conversions should NOT be performed:
+下面的类型转换永远都不应该出现：
 
- - null to anything: If the application asks for a specific type
-   and finds null instead, that should usually result in an error.
- - object to anything
- - array to anything
- - anything to object
- - anything to array, with the exception of numerically-indexed
-   object to array
+ - 从空值转换：如果需要用到一个类型的值，却返回一个空值的话，那么很有可能会最终导致报错。
+ - 从对象转换
+ - 从数组转换
+ - 到对象转换
+ - 到数组转换，除非是数字索引对象到数组的转换
 
-Converting objects and arrays to and from strings is tempting, but
-in practical situations raises thorny issues of quoting and
-double-escaping.
+对象或者数组和字符串之间的相互转换听起来很吸引人，但是实际应用中，引号及多重转义等问题会让人非常苦恼。
 
 ### Units format
 
