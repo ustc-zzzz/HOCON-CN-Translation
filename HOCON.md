@@ -37,8 +37,8 @@
   - [MIME类型](#mime%E7%B1%BB%E5%9E%8B)
   - [对于API的建议](#%E5%AF%B9%E4%BA%8Eapi%E7%9A%84%E5%BB%BA%E8%AE%AE)
     - [自动类型转换](#%E8%87%AA%E5%8A%A8%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2)
-    - [Units format](#units-format)
-    - [Duration format](#duration-format)
+    - [单位格式](#%E5%8D%95%E4%BD%8D%E6%A0%BC%E5%BC%8F)
+    - [时间单位](#%E6%97%B6%E9%97%B4%E5%8D%95%E4%BD%8D)
     - [Period Format](#period-format)
     - [Size in bytes format](#size-in-bytes-format)
     - [Config object merging and file merging](#config-object-merging-and-file-merging)
@@ -795,48 +795,30 @@ HOCON格式的文件总是应该被最后解析。JSON格式的文件应该作�
 
 对象或者数组和字符串之间的相互转换听起来很吸引人，但是实际应用中，引号及多重转义等问题会让人非常苦恼。
 
-### Units format
+### 单位格式
 
-Implementations may wish to support interpreting a value with some
-family of units, such as time units or memory size units: `10ms`
-or `512K`. HOCON does not have an extensible type system and there
-is no way to add a "duration" type. However, for example, if an
-application asks for milliseconds, the implementation can try to
-interpret a value as a milliseconds value.
+HOCON 的实现可以选择支持解释某些类型的单位，比如时间单位和内存尺寸单位：`10ms` 和 `512K` 这样的。HOCON 本身并不无可拓展的类型系统，也没有原生的“持续时间“类型的支持。但是，若应用程序要求以毫秒为单位的数据，HOCON 的实现可以尝试将值解释为毫秒数。
 
-If an API supports this, for each family of units it should define
-a default unit in the family. For example, the family of duration
-units might default to milliseconds (see below for details on
-durations). The implementation should then interpret values as
-follows:
+若有 API 支持，对于每个类型的单位都应当有其默认的单位。例如，时间类单位的默认单位可以是毫秒（细节参见下文）。HOCON 的实现应当按下列方式解释：
 
- - if the value is a number, it is taken to be a number in
-   the default unit.
- - if the value is a string, it is taken to be this sequence:
+ - 若值是数值，将其解读为数字并使用默认单位处理。
+ - 若值是字符串，则其顺序上必须有如下形式：
 
-     - optional whitespace
-     - a number
-     - optional whitespace
-     - an optional unit name consisting only of letters (letters
-       are the Unicode `L*` categories, Java `isLetter()`)
-     - optional whitespace
+     - 若干可有可无的空格
+     - 数字
+     - 若干可有可无的空格
+     - 可有可无的单位，仅由字母（Unicode `L*` 分类下的字符，可令 Java `isLetter()` 返回 `true`）组成
+     - 若干可有可无的空格
 
-   If a string value has no unit name, then it should be
-   interpreted with the default unit, as if it were a number. If a
-   string value has a unit name, that name of course specifies the
-   value's interpretation.
+   若字符串值中没有出现单位名，应使用默认单位，即将字符串看作是数字处理。若字符串值中出现了单位名，实现应理所当然地使用指定的这个单位。
 
-### Duration format
+### 时间单位
 
-Implementations may wish to support a `getMilliseconds()` (and
-similar for other time units).
+HOCON 的实现可以提供对 `getMilliseconds()` 及其他类似时间单位的支持。
 
-This can use the general "units format" described above; bare
-numbers are taken to be in milliseconds already, while strings are
-parsed as a number plus an optional unit string.
+时间单位可以利用上文中提到的一般“单位格式”：不带单位的数字视作使用毫秒为单位，字符串视作数字和可选的单位的组合。
 
-The supported unit strings for duration are case sensitive and
-must be lowercase. Exactly these strings are supported:
+受支持的时间单位的字符串应当大小写敏感，并只支持小写。下列字符串是所有支持的单位的准确形式：
 
  - `ns`, `nano`, `nanos`, `nanosecond`, `nanoseconds`
  - `us`, `micro`, `micros`, `microsecond`, `microseconds`
