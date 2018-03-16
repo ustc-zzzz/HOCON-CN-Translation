@@ -48,7 +48,7 @@
     - [环境变量用作引用解析的备选项](#%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E7%94%A8%E4%BD%9C%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90%E7%9A%84%E5%A4%87%E9%80%89%E9%A1%B9)
     - [连字符还是小写驼峰？](#%E8%BF%9E%E5%AD%97%E7%AC%A6%E8%BF%98%E6%98%AF%E5%B0%8F%E5%86%99%E9%A9%BC%E5%B3%B0)
   - [注意：和Java语言的properties文件的相似性](#%E6%B3%A8%E6%84%8F%E5%92%8Cjava%E8%AF%AD%E8%A8%80%E7%9A%84properties%E6%96%87%E4%BB%B6%E7%9A%84%E7%9B%B8%E4%BC%BC%E6%80%A7)
-  - [Note on Windows and case sensitivity of environment variables](#note-on-windows-and-case-sensitivity-of-environment-variables)
+  - [注意：Windows平台以及大小写敏感的环境变量](#%E6%B3%A8%E6%84%8Fwindows%E5%B9%B3%E5%8F%B0%E4%BB%A5%E5%8F%8A%E5%A4%A7%E5%B0%8F%E5%86%99%E6%95%8F%E6%84%9F%E7%9A%84%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -1065,37 +1065,20 @@ with system properties anyway.
  - HOCON允许注释和键值对出现在同一行，但是properties文件只会识别从一行的第一个字符开始的注释
  - HOCON中存在`${}`形式的引用
 
-## Note on Windows and case sensitivity of environment variables
+## 注意：Windows平台以及大小写敏感的环境变量
 
-HOCON's lookup of environment variable values is always case sensitive, but
-Linux and Windows differ in their handling of case.
+HOCON检索环境变量永远采取大小写敏感的策略，但具体解析时Linux和Windows等平台的处理方式并不相同。
 
-Linux allows one to define multiple environment variables with the same
-name but with different case; so both "PATH" and "Path" may be defined
-simultaneously. HOCON's access to these environment variables on Linux
-is straightforward; ie just make sure you define all your vars with the required case.
+在Linux中你可以定义多个名称相同，但大小写不同的环境变量；因此Linux中可能会同时出现"PATH"和"Path"两个不同的环境变量。HOCON在Linux平台采用直接的检索策略；换言之，请确保你的定义中，大小写都是正确的。
 
-Windows is more confusing. Windows environment variables names may contain a
-mix of upper and lowercase characters, eg "Path", however Windows does not
-allow one to define multiple instances of the same name but differing in case.
-Whilst accessing env vars in Windows is case insensitive, accessing env vars in
-HOCON is case sensitive.
-So if you know that you HOCON needs "PATH" then you must ensure that
-the variable is defined as "PATH" rather than some other name such as
-"Path" or "path".
-However, Windows does not allow us to change the case of an existing env var; we can't
-simply redefine the var with an upper case name.
-The only way to ensure that your environment variables have the desired case
-is to first undefine all the env vars that you will depend on then redefine
-them with the required case.
+Windows的情况更令人迷惑一些。Windows中环境变量的名称可能包含大小写字符的混合，例如"Path"等，但是Windows不允许定义多个同名但大小写不同的环境变量。在Windows中访问环境变量不区分大小写，访问HOCON中的env变量区分大小写。在Windows中访问环境变量不区分大小写，不过在HOCON中访问环境变量是区分大小写的。因此如果你清楚你的HOCON文件需要"PATH"这一环境变量，那么你必须确保该变量被定义为"PATH"而不是诸如"Path"或者"path"等。不过，Windows不允许我们改变一个已有环境变量的大小写；我们不能简单地把一个环境变量换成大写的形式。确保环境变量具有我们想要的大小写形式的唯一方法是首先将所有需要用到的环境变量取消定义，然后使用我们想要的大小写形式重新定义它们。
 
-For example, the the ambient environment might have this definition ...
+比如说我们可能有这样的环境变量定义……
 
 ```
 set Path=A;B;C
 ```
-.. we just don't know. But if the HOCON needs "PATH", then the start script must
-take a precautionary approach and enforce the necessary case as follows ...
+……管他值是什么样的。不过如果HOCON需要用到"PATH"的话，那么启动脚本可能需要做一些预防性工作，以应对各种可能情况……
 
 ```
 set OLDPATH=%PATH%
@@ -1105,6 +1088,4 @@ set PATH=%OLDPATH%
 %JAVA_HOME%/bin/java ....
 ```
 
-You cannot know what ambient environment variables might exist in the ambient environment
-when your program is invoked, nor what case those definitions might have.
-Therefore the only safe thing to do is redefine all the vars you rely on as shown above.
+在你的程序执行时，你没有办法了解周围环境中可能存在的环境变量，也没有办法知道这些定义可能会出现什么情况。因此，唯一安全的做法是重新定义你需要用到的所有变量，如上所示。
