@@ -849,7 +849,7 @@ HOCON 的实现可以选择支持 `getBytes()`，它返回以字节单位描述�
 
 单字母的单位可以使用大写字母（注意：时间单位永远都是小写，这个规定仅针对尺寸单位）。
 
-然而不幸的是，单位标准的不同可能会招来麻烦——这个问题就是以 2 为底和以 10 为底的问题。业界标准才去的做法和大众的用法不尽相同，以至于使用业界标准对会令普通人困惑。更棘手的是大众的用法还会因为“是在讨论内存还是硬盘空间”而有所变化，操作系统和应用程序的不同更是令在给这个问题火上浇油。详细的案例可参考
+然而不幸的是，单位标准的不同可能会招来麻烦——这个问题就是以 2 为底和以 10 为底的问题。业界标准采取的做法和大众的用法不尽相同，以至于使用业界标准会令普通人困惑。更棘手的是大众的用法还会因为“是在讨论内存还是硬盘空间”而有所变化，操作系统和应用程序的不同更是令在给这个问题火上浇油。详细的案例可参考
 [https://en.wikipedia.org/wiki/Binary_prefix#Deviation_between_powers_of_1024_and_powers_of_1000](https://en.wikipedia.org/wiki/Binary_prefix#Deviation_between_powers_of_1024_and_powers_of_1000)。显然，在不先制造混乱的情况下是没办法理清这里面的头绪的。
 
 对于单个字节来说，下列字符串是所有支持的单位的准确形式：
@@ -884,45 +884,29 @@ HOCON 的实现可以选择支持 `getBytes()`，它返回以字节单位描述�
 
 ### 配置对象合并与文件合并
 
-It may be useful to offer a method to merge two objects. If such a
-method is provided, it should work as if the two objects were
-duplicate values for the same key in the same file. (See the
-section earlier on duplicate key handling.)
+提供合并两个对象的方法也许会有用。若提供了这样一个方法，它的工作方式应当和处理重复键的方式一样。（关于重复键的处理请参考前文。）
 
-As with duplicate keys, an intermediate non-object value "hides"
-earlier object values. So say you merge three objects in this
-order:
+和处理重复键一样，中间插入的非对象值会“隐藏”之前的对象。比方说如果你按下列顺序合并对象：
 
  - `{ a : { x : 1 } }`  (first priority)
  - `{ a : 42 }` (fallback)
  - `{ a : { y : 2 } }` (another fallback)
 
-The result would be `{ a : { x : 1 } }`. The two objects are not
-merged because they are not "adjacent"; the merging is done in
-pairs, and when `42` is paired with `{ y : 2 }`, `42` simply wins
-and loses all information about what it overrode.
+结果会是 `{ a : { x : 1 } }`。两个对象因为“不相邻”所以没有合并；合并是成对进行的，`42` 与 `{ y : 2 }` 合并时，`42` 优先的规则使得后者的信息完全丢失。
 
-But if you re-ordered like this:
+但如果合并的顺序改成这样：
 
  - `{ a : { x : 1 } }`  (first priority)
  - `{ a : { y : 2 } }` (fallback)
  - `{ a : 42 }` (another fallback)
 
-Now the result would be `{ a : { x : 1, y : 2 } }` because the two
-objects are adjacent.
+此时的结果就是 `{ a : { x : 1, y : 2 } }`，因为两个对象现在相邻了。
 
-This rule for merging objects loaded from different files is
-_exactly_ the same behavior as for merging duplicate fields in the
-same file. All merging works the same way.
+合并两个文件中不同的对象的规则和合并同一文件中重复键值对的规则 __完全相同__。所有的合并都使用同一套规则。
 
-Needless to say, normally it's well-defined whether a config
-setting is supposed to be a number or an object. This kind of
-weird pathology where the two are mixed should not be happening.
+某一个配置的值应当是数字还是对象这样的规则不需要重复。两种类型混淆在一起的情况从一开始就不应该出现。
 
-The one place where it matters, though, is that it allows you to
-"clear" an object and start over by setting it to null and then
-setting it back to a new object. So this behavior gives people a
-way to get rid of default fallback values they don't want.
+但这样的情况还是有用的：你可以通过赋值为 null 的方式来清空之前的值，然后重新来过。若如此做，就可以避开默认的备选项。
 
 ### Java properties 映射
 
