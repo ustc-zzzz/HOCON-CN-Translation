@@ -39,8 +39,8 @@
     - [自动类型转换](#%E8%87%AA%E5%8A%A8%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2)
     - [单位格式](#%E5%8D%95%E4%BD%8D%E6%A0%BC%E5%BC%8F)
     - [时间单位](#%E6%97%B6%E9%97%B4%E5%8D%95%E4%BD%8D)
-    - [Period Format](#period-format)
-    - [Size in bytes format](#size-in-bytes-format)
+    - [日期单位](#%E6%97%A5%E6%9C%9F%E5%8D%95%E4%BD%8D)
+    - [字节单位描述的尺寸](#%E5%AD%97%E8%8A%82%E5%8D%95%E4%BD%8D%E6%8F%8F%E8%BF%B0%E7%9A%84%E5%B0%BA%E5%AF%B8)
     - [Config object merging and file merging](#config-object-merging-and-file-merging)
     - [Java properties 映射](#java-properties-%E6%98%A0%E5%B0%84)
     - [常规的 JVM 应用配置文件](#%E5%B8%B8%E8%A7%84%E7%9A%84-jvm-%E5%BA%94%E7%94%A8%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)
@@ -828,55 +828,35 @@ HOCON 的实现可以提供对 `getMilliseconds()` 及其他类似时间单位�
  - `h`, `hour`, `hours`
  - `d`, `day`, `days`
 
-### Period Format
+### 日期单位
 
-Similar to the `getDuration()` method, there is a `getPeriod()` method
-available for getting time units as a `java.time.Period`.
+和 `getDuration()` 方法类似，`getPeriod()` 可用来获取时间单位并转化为 `java.time.Period`。
 
-This can use the general "units format" described above; bare
-numbers are taken to be in days, while strings are
-parsed as a number plus an optional unit string.
+日期单位可以利用上文中提到的一般“单位格式”：不带单位的数字视作使用天为单位，字符串视作数字和可选单位的组合。
 
-The supported unit strings for period are case sensitive and
-must be lowercase. Exactly these strings are supported:
+受支持的时间单位的字符串应当大小写敏感，并只支持小写。下列字符串是所有支持的单位的准确形式：
 
  - `d`, `day`, `days`
  - `w`, `week`, `weeks`
- - `m`, `mo`, `month`, `months` (note that if you are using `getTemporal()`
- which may return either a `java.time.Duration` or a `java.time.Period`
- you will want to use `mo` rather than `m` to prevent your unit being
- parsed as minutes)
+ - `m`, `mo`, `month`, `months`（注意，如果你使用了 `getTemporal()`，因为它可以返回 `java.time.Duration` 或 `java.time.Period` 中的某一个，你应该使用 `mo` 代表月，以防止 `m` 被解析为分钟）
  - `y`, `year`, `years`
 
-### Size in bytes format
+### 字节单位描述的尺寸
 
-Implementations may wish to support a `getBytes()` returning a
-size in bytes.
+HOCON 的实现可以选择支持 `getBytes()`，它返回以字节单位描述的尺寸。
 
-This can use the general "units format" described above; bare
-numbers are taken to be in bytes already, while strings are
-parsed as a number plus an optional unit string.
+它可以利用上文中提到的一般“单位格式”；不带单位的数字视作使用字节为单位，字符串视作数字和可选单位的组合。
 
-The one-letter unit strings may be uppercase (note: duration units
-are always lowercase, so this convention is specific to size
-units).
+单字母的单位可以使用大写字母（注意：时间单位永远都是小写，这个规定仅针对尺寸单位）。
 
-There is an unfortunate nightmare with size-in-bytes units, that
-they may be in powers or two or powers of ten. The approach
-defined by standards bodies appears to differ from common usage,
-such that following the standard leads to people being confused.
-Worse, common usage varies based on whether people are talking
-about RAM or disk sizes, and various existing operating systems
-and apps do all kinds of different things.  See
-https://en.wikipedia.org/wiki/Binary_prefix#Deviation_between_powers_of_1024_and_powers_of_1000
-for examples. It appears impossible to sort this out without
-causing confusion for someone sometime.
+然而不幸的是，单位标准的不同可能会招来麻烦——这个问题就是以 2 为底和以 10 为底的问题。业界标准才去的做法和大众的用法不尽相同，以至于使用业界标准对会令普通人困惑。更棘手的是大众的用法还会因为“是在讨论内存还是硬盘空间”而有所变化，操作系统和应用程序的不同更是令在给这个问题火上浇油。详细的案例可参考
+https://en.wikipedia.org/wiki/Binary_prefix#Deviation_between_powers_of_1024_and_powers_of_1000。显然，在不先制造混乱的情况下是没办法理清这里面的头绪的。
 
-For single bytes, exactly these strings are supported:
+对于单个字节来说，下列字符串是所有支持的单位的准确形式：
 
  - `B`, `b`, `byte`, `bytes`
 
-For powers of ten, exactly these strings are supported:
+对于 10 为底的单位来说，下列字符串是所有支持的单位的准确形式：
 
  - `kB`, `kilobyte`, `kilobytes`
  - `MB`, `megabyte`, `megabytes`
@@ -887,7 +867,7 @@ For powers of ten, exactly these strings are supported:
  - `ZB`, `zettabyte`, `zettabytes`
  - `YB`, `yottabyte`, `yottabytes`
 
-For powers of two, exactly these strings are supported:
+对于 2 为底的单位来说，下列字符串是所有支持的单位的准确形式：
 
  - `K`, `k`, `Ki`, `KiB`, `kibibyte`, `kibibytes`
  - `M`, `m`, `Mi`, `MiB`, `mebibyte`, `mebibytes`
@@ -898,19 +878,9 @@ For powers of two, exactly these strings are supported:
  - `Z`, `z`, `Zi`, `ZiB`, `zebibyte`, `zebibytes`
  - `Y`, `y`, `Yi`, `YiB`, `yobibyte`, `yobibytes`
 
-It's very unclear which units the single-character abbreviations
-("128K") should go with; some precedents such as `java -Xmx 2G`
-and the GNU tools such as `ls` map these to powers of two, so this
-spec copies that. You can certainly find examples of mapping these
-to powers of ten, though. If you don't like ambiguity, don't use
-the single-letter abbreviations.
+使用单字母缩写的时候（比如 "128K" 这样的）会产生歧义；但诸如 `java -Xmx 2G`、GNU 工具中的 `ls` 表这样的先例使用的是以 2 为底的单位，所以本规范也遵从这些先例。当然，你也能找到将这些单位映射到以 10 为底的单位的例子。如果你不想制造歧义，那就不要用单字母的单位。
 
-Note: any value in zetta/zebi or yotta/yobi will overflow a 64-bit
-integer, and of course large-enough values in any of the units may
-overflow. Most real-world APIs and apps will not support byte
-counts that overflow a 64-bit integer. The huge units are provided
-just to be complete but probably aren't useful in practice. At
-least not in 2014.
+注意：zetta/zebi、yotta/yobi 以及更大的单位肯定会导致 64 位整数的溢出。现实世界中，API 和应用程序通常不会支持这些大单位。提供这些单位的实现通常只为了追求完美，但实际上实用性不高（至少 2014 年是如此）。
 
 ### Config object merging and file merging
 
