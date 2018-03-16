@@ -959,56 +959,26 @@ way to get rid of default fallback values they don't want.
 将 Java properties 数据与 JSON 或 HOCON 中的数据在某些时候是有用的。关于 Java 的 properties 文件的规范，可参考这里：
 https://docs.oracle.com/javase/8/docs/api/java/util/Properties.html#load-java.io.Reader-
 
-Java properties parse as a one-level map from string keys to
-string values.
+Java poperties 通常被解析为字符串到字符串的单射。
 
-To convert to HOCON, first split each key on the `.` character,
-keeping any empty strings (including leading and trailing empty
-strings). Note that this is _very different_ from parsing a path
-expression.
+将 Java properties 转换为 HOCON 时，首先要将键按 `.` 分割，保留所有开头和结尾的空格。注意这和解析路径表达式 _大不相同_。
 
-The key split on `.` is a series of path elements. So the
-properties key with just `.` is a path with two elements, both of
-them an empty string. `a.` is a path with two elements, `a` and
-empty string.  (Java's `String.split()` does NOT do what you want
-for this.)
+按 `.` 分割键后会得到一系列路径元素。据此，键 `.` 分割后的结果是两个空字符串。`a.` 分割后的结果是 `a` 和一个空字符串。（注意 Java 的 `String.split` 完全不是这样工作的。）
 
-It is impossible to represent a key with a `.` in it in a
-properties file.  If a JSON/HOCON key has a `.` in it, which is
-possible if the key is quoted, then there is no way to refer to it
-as a Java property. It is not recommended to name HOCON keys with
-a `.` in them, since it would be confusing at best in any case.
+在 properties 中不可能使用 `.` 作为键。如果在 JSON/HOCON 通过引号等方式是用来 `.` 作为键名，那么这个键就无法表达为 Java property。因为这样的键不论什么时候都只可能导致混乱，我们不推荐在 HOCON 的键名中使用 `.`。
 
-Once you have a path for each value, construct a tree of
-JSON-style objects with the string value of each property located
-at that value's path.
+当所有的值对应的路径解析完毕后，根据这些路径构造 JSON 风格的对象树。
 
-Values from properties files are _always_ strings, even if they
-could be parsed as some other type. Implementations should do type
-conversion if an app asks for an integer, as described in an
-earlier section.
+Properties 中解析出的值 _永远_ 都是字符串，即使能解析成其他类型的值也应如此。若应用程序要求整数，HOCON 的实现应按照前文中描述过的方法进行类型转换。
 
-When Java loads a properties file, unfortunately it does not
-preserve the order of the file. As a result, there is an
-intractable case where a single key needs to refer to both a
-parent object and a string value. For example, say the Java
-properties file has:
+不幸的是 Java 加载 properties 时不保留顺序。结果就是，当有一个键同时对应一个对象和一个字符串时，就没有办法正确处理了。例如，如果有如下 properties 文件：
 
     a=hello
     a.b=world
 
-In this case, `a` needs to be both an object and a string value.
-The _object_ must always win in this case... the "object wins"
-rule throws out at most one value (the string) while "string wins"
-would throw out all values in the object. Unfortunately, when
-properties files are mapped to the JSON structure, there is no way
-to access these strings that conflict with objects.
+在这个情况下，`a` 需要同时作为对象和字符串两个值的键。在这个情况下，_对象_ 必须作为最终的解析结果……以“对象优先”为原则时，只会丢弃最多一个值（字符串），但如果以“字符串优先”为原则的话，整个对象的值都会丢失。然而，在将 properties 映射为 JSON 结构后，那个与对象冲突的字符串值就再也无法访问到了。
 
-The usual rule in HOCON would be that the later assignment in the
-file wins, rather than "object wins"; but implementing that for
-Java properties would require implementing a custom Java
-properties parser, which is surely not worth it and wouldn't help
-with system properties anyway.
+HOCON 通常的原则是“后来者优先”而非“对象优先”，但实现这个效果需要再实现一个自定义的 Java properties 解析器，但这样并不值得，也对系统属性没什么帮助。
 
 ### 常规的 JVM 应用配置文件
 
