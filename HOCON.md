@@ -43,7 +43,7 @@
     - [Size in bytes format](#size-in-bytes-format)
     - [Config object merging and file merging](#config-object-merging-and-file-merging)
     - [Java properties mapping](#java-properties-mapping)
-    - [Conventional configuration files for JVM apps](#conventional-configuration-files-for-jvm-apps)
+    - [常规的 JVM 应用配置文件](#%E5%B8%B8%E8%A7%84%E7%9A%84%20JVM%20%E5%BA%94%E7%94%A8%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)
     - [常规的系统属性覆盖](#%E5%B8%B8%E8%A7%84%E7%9A%84%E7%B3%BB%E7%BB%9F%E5%B1%9E%E6%80%A7%E8%A6%86%E7%9B%96)
     - [环境变量用作引用解析的备选项](#%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E7%94%A8%E4%BD%9C%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90%E7%9A%84%E5%A4%87%E9%80%89%E9%A1%B9)
     - [连字符还是小写驼峰？](#%E8%BF%9E%E5%AD%97%E7%AC%A6%E8%BF%98%E6%98%AF%E5%B0%8F%E5%86%99%E9%A9%BC%E5%B3%B0)
@@ -1011,35 +1011,18 @@ Java properties would require implementing a custom Java
 properties parser, which is surely not worth it and wouldn't help
 with system properties anyway.
 
-### Conventional configuration files for JVM apps
+### 常规的 JVM 应用配置文件
 
-By convention, JVM apps have two parts to their configuration:
+通常，JVM 上的应用的配置文件由两部分组成：
 
- - the _reference_ config is made up of all resources named
-   `reference.conf` on the classpath, merged in the order they
-   are returned by `ClassLoader.getResources()`; also, system
-   property overrides are applied.
- - the _application_ config can be loaded from anywhere an
-   application likes, but by default if the application doesn't
-   provide a config it would be loaded from files
-   `application.{conf,json,properties}` on the classpath and
-   then system property overrides are applied.
- - the reference config may be different for different class
-   loaders, since each jar may provide a `reference.conf`
-   to go with the code in that jar.
- - a single JVM may have multiple application configs if
-   it has multiple modules or contexts of some kind.
+ - _参考_ 配置（Reference Config）由 classpath 中所有名为 `reference.conf` 的资源组成，并按照 `ClassLoader.getResources()` 的返回顺序合并；系统属性会覆盖其中的值。
+ - _应用_ 配置（Application Config）由应用负责从合适的地方加载，但在应用没有提供配置的情况下，默认会试图从 classpath 中加载 `application.{conf,json,properties}`，并应用系统属性覆盖。
+ - 不同的类加载器所加载出的参考配置可能不一样，因为每一个 jar 都可以提供一个 `reference.conf`。
+ - 单一 JVM 应用可以在有多个模块或上下文等环境时附带多个应用配置。
 
-The reference config for a given class loader should be merged and
-resolved first, and may be shared among all application configs in
-that class loader. Substitutions in the reference config are not
-affected by any application configs, because the reference config
-should be resolved by itself.
+对类加载器来说，它应当首先加载、合并并解析参考配置，以供通过同样类加载器加载的应用的配置使用。应用配置不会影响参考配置的引用，因为参考配置的解析只依靠参考配置它自己。
 
-The application config should then be loaded, have the reference
-config added as a fallback, and have substitutions resolved. This
-means the application config can refer to the reference config in
-its substitutions.
+应用配置应在参考配置加载完成后加载，并以参考配置中的值为备选项，在此基础上进行解析。这意味着应用配置的引用可以来自参考配置。
 
 ### 常规的系统属性覆盖
 
