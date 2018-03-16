@@ -47,7 +47,7 @@
     - [常规的系统属性覆盖](#%E5%B8%B8%E8%A7%84%E7%9A%84%E7%B3%BB%E7%BB%9F%E5%B1%9E%E6%80%A7%E8%A6%86%E7%9B%96)
     - [环境变量用作引用解析的备选项](#%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E7%94%A8%E4%BD%9C%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90%E7%9A%84%E5%A4%87%E9%80%89%E9%A1%B9)
     - [连字符还是小写驼峰？](#%E8%BF%9E%E5%AD%97%E7%AC%A6%E8%BF%98%E6%98%AF%E5%B0%8F%E5%86%99%E9%A9%BC%E5%B3%B0)
-  - [Note on Java properties similarity](#note-on-java-properties-similarity)
+  - [注意：和Java语言的properties文件的相似性](#%E6%B3%A8%E6%84%8F%E5%92%8Cjava%E8%AF%AD%E8%A8%80%E7%9A%84properties%E6%96%87%E4%BB%B6%E7%9A%84%E7%9B%B8%E4%BC%BC%E6%80%A7)
   - [Note on Windows and case sensitivity of environment variables](#note-on-windows-and-case-sensitivity-of-environment-variables)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -1048,31 +1048,22 @@ with system properties anyway.
 
 推荐使用 `hyphen-separated`，而非 `camelCase`，作为键名的命名规范。
 
-## Note on Java properties similarity
+## 注意：和Java语言的properties文件的相似性
 
-You can write a HOCON file that looks much like a Java properties
-file, and many valid Java properties files will also parse as
-HOCON.
+你完全可以把一个HOCON格式的文件写成和properties文件类似的样子，同时大量的properties文件也可以被当作合法的HOCON格式文件解析。
 
-However, HOCON is not a Java properties superset and the corner
-cases work like JSON, not like properties.
+但是，HOCON并不是Java语言的properties文件的超集，对于一些特殊情况来说，HOCON会按照类似于JSON的方式，而不是properties文件的方式解析。
 
-Differences include but are probably not limited to:
+不同之处包括但不限于：
 
- - certain characters that can be unquoted in properties files
-   have to be placed in JSON-style double-quoted strings in HOCON
- - unquoted strings in HOCON do not support escape sequences
- - unquoted strings in HOCON do not preserve trailing whitespace
- - multi-line unquoted strings using backslash to continue the
-   line are not allowed in HOCON
- - in properties files you can omit the value for a key and it's
-   interpreted as an empty string, in HOCON you cannot omit the
-   value
- - properties files support '!' as a comment character
- - HOCON allows comments on the same line as a key or value, while
-   properties files only recognize comment characters if they
-   occur as the first character on the line
- - HOCON interprets `${}` as a substitution
+ - 某些不需要在properties文件中被引号括起来的特定字符需要在HOCON中被替换成JSON风格的被双引号括起来的字符串形式
+ - HOCON中不加引号的字符串不支持转义
+ - HOCON中不加引号的字符串会忽略尾部的空格
+ - HOCON不支持使用反斜杠的方式连接多行不加引号的字符串
+ - properties文件中的键值对中，如果值被省略，那么将会被按照空字符串解析，在HOCON中你不能这样做
+ - properties文件使用'!'作为注释的前缀
+ - HOCON允许注释和键值对出现在同一行，但是properties文件只会识别从一行的第一个字符开始的注释
+ - HOCON中存在`${}`形式的引用
 
 ## Note on Windows and case sensitivity of environment variables
 
