@@ -41,7 +41,7 @@
     - [时间单位](#%E6%97%B6%E9%97%B4%E5%8D%95%E4%BD%8D)
     - [日期单位](#%E6%97%A5%E6%9C%9F%E5%8D%95%E4%BD%8D)
     - [字节单位描述的尺寸](#%E5%AD%97%E8%8A%82%E5%8D%95%E4%BD%8D%E6%8F%8F%E8%BF%B0%E7%9A%84%E5%B0%BA%E5%AF%B8)
-    - [Config object merging and file merging](#config-object-merging-and-file-merging)
+    - [配置对象合并与文件合并](#%E9%85%8D%E7%BD%AE%E5%AF%B9%E8%B1%A1%E5%90%88%E5%B9%B6%E4%B8%8E%E6%96%87%E4%BB%B6%E5%90%88%E5%B9%B6)
     - [Java properties 映射](#java-properties-%E6%98%A0%E5%B0%84)
     - [常规的 JVM 应用配置文件](#%E5%B8%B8%E8%A7%84%E7%9A%84-jvm-%E5%BA%94%E7%94%A8%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)
     - [常规的系统属性覆盖](#%E5%B8%B8%E8%A7%84%E7%9A%84%E7%B3%BB%E7%BB%9F%E5%B1%9E%E6%80%A7%E8%A6%86%E7%9B%96)
@@ -850,7 +850,7 @@ HOCON 的实现可以选择支持 `getBytes()`，它返回以字节单位描述�
 单字母的单位可以使用大写字母（注意：时间单位永远都是小写，这个规定仅针对尺寸单位）。
 
 然而不幸的是，单位标准的不同可能会招来麻烦——这个问题就是以 2 为底和以 10 为底的问题。业界标准才去的做法和大众的用法不尽相同，以至于使用业界标准对会令普通人困惑。更棘手的是大众的用法还会因为“是在讨论内存还是硬盘空间”而有所变化，操作系统和应用程序的不同更是令在给这个问题火上浇油。详细的案例可参考
-https://en.wikipedia.org/wiki/Binary_prefix#Deviation_between_powers_of_1024_and_powers_of_1000。显然，在不先制造混乱的情况下是没办法理清这里面的头绪的。
+[https://en.wikipedia.org/wiki/Binary_prefix#Deviation_between_powers_of_1024_and_powers_of_1000](https://en.wikipedia.org/wiki/Binary_prefix#Deviation_between_powers_of_1024_and_powers_of_1000)。显然，在不先制造混乱的情况下是没办法理清这里面的头绪的。
 
 对于单个字节来说，下列字符串是所有支持的单位的准确形式：
 
@@ -882,7 +882,7 @@ https://en.wikipedia.org/wiki/Binary_prefix#Deviation_between_powers_of_1024_and
 
 注意：zetta/zebi、yotta/yobi 以及更大的单位肯定会导致 64 位整数的溢出。现实世界中，API 和应用程序通常不会支持这些大单位。提供这些单位的实现通常只为了追求完美，但实际上实用性不高（至少 2014 年是如此）。
 
-### Config object merging and file merging
+### 配置对象合并与文件合并
 
 It may be useful to offer a method to merge two objects. If such a
 method is provided, it should work as if the two objects were
