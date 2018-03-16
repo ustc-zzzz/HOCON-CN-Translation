@@ -42,8 +42,8 @@
     - [Period Format](#period-format)
     - [Size in bytes format](#size-in-bytes-format)
     - [Config object merging and file merging](#config-object-merging-and-file-merging)
-    - [Java properties mapping](#java-properties-mapping)
-    - [常规的 JVM 应用配置文件](#%E5%B8%B8%E8%A7%84%E7%9A%84%20JVM%20%E5%BA%94%E7%94%A8%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)
+    - [Java properties 映射](#java-properties-%E6%98%A0%E5%B0%84)
+    - [常规的 JVM 应用配置文件](#%E5%B8%B8%E8%A7%84%E7%9A%84-jvm-%E5%BA%94%E7%94%A8%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)
     - [常规的系统属性覆盖](#%E5%B8%B8%E8%A7%84%E7%9A%84%E7%B3%BB%E7%BB%9F%E5%B1%9E%E6%80%A7%E8%A6%86%E7%9B%96)
     - [环境变量用作引用解析的备选项](#%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E7%94%A8%E4%BD%9C%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90%E7%9A%84%E5%A4%87%E9%80%89%E9%A1%B9)
     - [连字符还是小写驼峰？](#%E8%BF%9E%E5%AD%97%E7%AC%A6%E8%BF%98%E6%98%AF%E5%B0%8F%E5%86%99%E9%A9%BC%E5%B3%B0)
@@ -954,10 +954,9 @@ The one place where it matters, though, is that it allows you to
 setting it back to a new object. So this behavior gives people a
 way to get rid of default fallback values they don't want.
 
-### Java properties mapping
+### Java properties 映射
 
-It may be useful to merge Java properties data with data loaded
-from JSON or HOCON. See the Java properties spec here:
+将 Java properties 数据与 JSON 或 HOCON 中的数据在某些时候是有用的。关于 Java 的 properties 文件的规范，可参考这里：
 https://docs.oracle.com/javase/8/docs/api/java/util/Properties.html#load-java.io.Reader-
 
 Java properties parse as a one-level map from string keys to
