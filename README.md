@@ -2,7 +2,7 @@
 
 Here is the GitHub repository of the unofficial Simplified Chinese translation of [HOCON.md in `lightbend/config`](https://github.com/lightbend/config/blob/master/HOCON.md), mainly maintained by [@ustc-zzzz](https://github.com/ustc-zzzz) and [@3TUSK](https://github.com/3TUSK). The entire translation is located in [HOCON.md](HOCON.md) of the repository.
 
-这里是 [`lightbend/config` 项目的 HOCON.md](https://github.com/lightbend/config/blob/master/HOCON.md>) 的非官方简体中文翻译的 GitHub 仓库，由 [@ustc-zzzz](https://github.com/ustc-zzzz) 和 [@3TUSK](https://github.com/3TUSK) 主要负责维护。整个翻译位于仓库的 [HOCON.md](HOCON.md) 中。
+这里是 [`lightbend/config` 项目的 HOCON.md](https://github.com/lightbend/config/blob/master/HOCON.md) 的非官方简体中文翻译的 GitHub 仓库，由 [@ustc-zzzz](https://github.com/ustc-zzzz) 和 [@3TUSK](https://github.com/3TUSK) 主要负责维护。整个翻译位于仓库的 [HOCON.md](HOCON.md) 中。
 
 ## 协议
 
